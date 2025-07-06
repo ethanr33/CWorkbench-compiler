@@ -14,6 +14,8 @@ using std::string;
 using std::unordered_set;
 using std::unordered_map;
 
+const string SEPARATOR = "::=";
+
 const std::unordered_map<std::string, TOKEN_TYPE> TERMINAL_MAP = {
     {"RETURN",    TOKEN_TYPE::KW_RETURN},
     {"INT",       TOKEN_TYPE::KW_INT},

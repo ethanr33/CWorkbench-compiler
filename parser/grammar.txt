@@ -1,4 +1,4 @@
 <root> ::= <function>
-<function> ::= <type> IDENT ( ) { <return> }
-<type> ::= INT
-<return> ::= RETURN INT_CONST ;
+<function> ::= <type> "IDENT" "(" ")" "{" <return> "}"
+<type> ::= "INT"
+<return> ::= "RETURN" "INT_CONST" ";"

@@ -239,25 +239,29 @@ void CFG::load_data(string file_path) {
         string separator;
         ss >> separator;
 
+        if (separator != SEPARATOR) {
+            throw runtime_error("Found " + separator + " as separator, when it should be " + SEPARATOR);
+        }
+
         vector<Symbol*> rule;
 
         string cur_token;
         while (ss >> cur_token) {
             Symbol* cur_symbol;
 
+            if (!is_nonterminal_symbol(cur_token)) {
+                cur_token = cur_token.substr(1, cur_token.length() - 2);
+            }
+
             if (symbols.find(cur_token) != symbols.end()) {
                 cur_symbol = symbols.at(cur_token);
             } else {
-                cur_symbol = new Symbol(cur_token, false);
+                cur_symbol = new Symbol(cur_token, !is_nonterminal_symbol(cur_token));
                 symbols.insert({cur_token, cur_symbol});
             }
 
-            if (cur_token.at(0) == '<' && cur_token.at(cur_token.length() - 1) == '>') {
-                rule.push_back(cur_symbol);
-            } else {
-                cur_symbol->is_terminal = true;
-                rule.push_back(cur_symbol);
-            }
+            rule.push_back(cur_symbol);
+
         }
 
         NonterminalRule new_rule(symbols.at(production_nonterminal), rule);
