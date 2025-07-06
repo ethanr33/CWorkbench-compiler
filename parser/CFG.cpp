@@ -188,6 +188,8 @@ void CFG::construct_parse_table() {
                     if (parse_table.find(rule.symbol) == parse_table.end()) {
                         inner_map = {{terminal_symbol, i}};
                         parse_table.insert({rule.symbol, inner_map});
+                    } else if (parse_table.at(rule.symbol).find(terminal_symbol) == parse_table.at(rule.symbol).end()) {
+                        parse_table.at(rule.symbol).insert({terminal_symbol, i});
                     } else {
                         parse_table.at(rule.symbol).at(terminal_symbol) = i;
                     }
@@ -248,6 +250,13 @@ void CFG::load_data(string file_path) {
         string cur_token;
         while (ss >> cur_token) {
             Symbol* cur_symbol;
+
+            if (cur_token == "|") {
+                NonterminalRule new_rule(symbols.at(production_nonterminal), rule);
+                productions.push_back(new_rule);
+                rule.clear();
+                continue;
+            }
 
             if (!is_nonterminal_symbol(cur_token)) {
                 cur_token = cur_token.substr(1, cur_token.length() - 2);
