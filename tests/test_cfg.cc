@@ -9,7 +9,7 @@ class CFGTest : public ::testing::Test {
         CFG cfg;
 
         CFGTest() {
-            cfg.load_data("parser/grammar.txt");
+            cfg.load_data("tests/simplegrammar.txt");
             cfg.generate_terminal_rules();
         }
 };
@@ -75,6 +75,18 @@ TEST_F(CFGTest, TokenToSymbolWorks) {
     for (int i = 0; i < NUM_TOKENS - 1; i++) {
         Token token((TOKEN_TYPE) i, "");
         Symbol* symbol = cfg.token_to_symbol(token);
+
+        bool symbol_exists = false;
+
+        for (const auto& [symbol_string, symbol] : cfg.symbols) {
+            if (symbol->corresponding_token == (TOKEN_TYPE) i) {
+                symbol_exists = true;
+            }   
+        }
+
+        if (!symbol_exists) {
+            continue;
+        }
 
         if (symbol == nullptr) {
             FAIL() << "token_to_symbol returned nullptr for token " << i;

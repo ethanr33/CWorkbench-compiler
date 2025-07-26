@@ -1,4 +1,6 @@
 <root> ::= <function>
 <function> ::= <type> "IDENT" "(" ")" "{" <return> "}"
 <type> ::= "INT"
-<return> ::= "RETURN" "INT_CONST" ";"
+<return> ::= "RETURN" <arithmeticexpr> ";"
+<arithmeticexpr> ::= "INT_CONST" <arithmeticexprsuffix>
+<arithmeticexprsuffix> ::= "+" <arithmeticexpr> | "ε"

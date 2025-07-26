@@ -18,23 +18,32 @@ enum class AST_NODE_TYPE {
     FUNCTION_NODE,
     RETURN_NODE,
     TYPE_NODE,
-    INT_CONST_NODE,
     IDENT_NODE,
+    ARITHMETIC_EXPR_NODE,
+    INT_CONST_NODE,
     TEMP_NODE
 };
 
 struct ASTNode {
     AST_NODE_TYPE node_type;
     vector<ASTNode*> children;
+    ASTNode* parent;
 
     ASTNode(AST_NODE_TYPE type) : node_type(type), children({}) {}
 
+    // You are responsible for deleting all ASTNode children before deleting the node itself!
     virtual ~ASTNode() {
-        for (ASTNode* child : children) {
-            delete child;
-        }
+        children.clear();
     }
 };
+
+struct ASTArithmeticExprNode : ASTNode {
+    string op;
+
+    ASTArithmeticExprNode() : ASTNode(AST_NODE_TYPE::ARITHMETIC_EXPR_NODE) {}
+    ASTArithmeticExprNode(string op) : ASTNode(AST_NODE_TYPE::ARITHMETIC_EXPR_NODE), op(op) {}
+};
+
 
 struct ASTTempNode : ASTNode {
     string data;
@@ -75,12 +84,25 @@ struct ASTIdentNode : ASTNode {
     ASTIdentNode(const string& identifier) : ASTNode(AST_NODE_TYPE::IDENT_NODE), identifier(identifier) {}
 };
 
+template<typename T>
+T* find_single_AST_node(ASTNode* parent, AST_NODE_TYPE to_find) {
+    for (ASTNode* child : parent->children) {
+        if (child->node_type == to_find) {
+            return dynamic_cast<T*>(child);
+        }
+    }
+
+    return nullptr;
+}
+
 struct AST {
     CFG grammar;
     ASTNode* root;
 
     AST() : root(nullptr) {}
     AST(CFG grammar) : root(nullptr), grammar(grammar) {}
+
+    void clean_arithmetic_expr_tree(ASTNode*);
 
     void construct_parse_tree(const vector<Token>&);
     void construct_AST_from_parse_tree();

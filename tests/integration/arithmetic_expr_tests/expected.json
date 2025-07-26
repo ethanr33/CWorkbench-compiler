@@ -1,0 +1,27 @@
+
+{
+    "twonumbers.cpp": {
+        "error": false,
+        "returncode": 3
+    },
+    "threenumbers.cpp" : {
+        "error": false,
+        "returncode": 6
+    },
+    "manynumbers.cpp" : {
+        "error": false,
+        "returncode": 55
+    },
+    "missingoperandright.cpp" : {
+        "error": true
+    },
+    "missingboth.cpp" : {
+        "error": true
+    },
+    "missingsemicolon.cpp" : {
+        "error": true
+    },
+    "doubleplus.cpp" : {
+        "error": true
+    }
+}

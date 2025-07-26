@@ -7,6 +7,7 @@
 
 using std::cout;
 using std::endl;
+using std::string;
 
 int main(int argc, char** argv) {
     if (argc != 2) {
@@ -33,6 +34,7 @@ int main(int argc, char** argv) {
         std::cout << "Error while parsing: " << e.what() << std::endl;
         return 1;
     }
+
 
     AssemblyGenerator generator;
 
