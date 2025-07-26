@@ -10,7 +10,7 @@ CppWorkbench is a C++ compiler written in C++. It compiles a subset of the C++ l
 
 # Supported C++ features
 
-Currently, the compiler only supports C++ programs with a simple main function which returns an integer. This will be expanded upon in the future.
+Currently, the compiler only supports C++ programs with a simple main function which returns an integer or sum of integers. This will be expanded upon in the future.
 
 Example program:
 
@@ -30,6 +30,7 @@ cppworkstation-compiler/
 ├── parser/          # Grammar definitions, LL(1) parser and AST generator
 ├── tests/           # Tests are located here
 │   └── integration/ # Integration tests
+├── tmp/             # Temporary files generated during building
 ├── tools/           # Various tools for debugging
 ├── main.cpp         
 ├── CMakeLists.txt
