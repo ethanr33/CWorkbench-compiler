@@ -9,7 +9,7 @@ class CFGTest : public ::testing::Test {
         CFG cfg;
 
         CFGTest() {
-            cfg.load_data("tests/simplegrammar.txt");
+            cfg.load_data("../tests/simplegrammar.txt");
             cfg.generate_terminal_rules();
         }
 };
