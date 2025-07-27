@@ -1,4 +1,4 @@
-name: C/C++ CI Unit Tests
+name: C/C++ CI Unit/Integration Tests
 
 on:
   push:
@@ -13,7 +13,19 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: build
+    - name: build unit tests
       run: ./build.sh
-    - name: run tests
+    - name: run unit tests
       run: cd build && ctest
+    - name: set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12.3"
+    - name: install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r tests/requirements.txt
+    - name: install nasm
+      run: sudo apt install nasm
+    - name: run integration tests
+      run: mkdir tmp && pytest tests/integration/integration_tests.py
