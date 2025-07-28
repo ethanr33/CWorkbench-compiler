@@ -38,9 +38,9 @@ set(SOURCES_TEST
 add_executable(compiler ${MAIN} ${SOURCES})
 
 add_executable(tests ${SOURCES_TEST})
-
 target_link_libraries(tests gtest_main)
 
 include(GoogleTest)
-
 gtest_discover_tests(tests)
+
+add_test(NAME unit_tests COMMAND tests)
