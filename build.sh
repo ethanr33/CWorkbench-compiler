@@ -14,6 +14,5 @@ cd ..
 
 build_exec=compiler
 
-if ! [ -f $build_exec ]; then
-  ln -s build/compiler $build_exec
-fi
+rm $build_exec
+ln -s build/compiler $build_exec
