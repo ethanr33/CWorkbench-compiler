@@ -4,6 +4,8 @@
 #include <iostream>
 #include <vector>
 
+#include "../parser/AST.h"
+
 using std::string;
 using std::vector;
 using std::cout;

@@ -28,6 +28,7 @@ enum class TOKEN_TYPE {
     O_PAREN,
     C_PAREN,
     SEMICOLON,
+    ASSIGNMENT_OP,
     PLUS,
     EPSILON,
     END_OF_INPUT,

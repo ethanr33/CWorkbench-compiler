@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <stack>
+#include <algorithm>
 
 #include "../tools/debug.h"
 #include "../lexer/Token.h"
@@ -16,10 +17,12 @@ using std::stack;
 enum class AST_NODE_TYPE {
     ROOT_NODE,
     FUNCTION_NODE,
+    FUNCTION_BODY_NODE,
     RETURN_NODE,
     TYPE_NODE,
     IDENT_NODE,
     ARITHMETIC_EXPR_NODE,
+    COPY_ASSIGNMENT_NODE,
     INT_CONST_NODE,
     TEMP_NODE
 };
@@ -35,6 +38,12 @@ struct ASTNode {
     virtual ~ASTNode() {
         children.clear();
     }
+};
+
+struct ASTCopyAssignmentNode : ASTNode {
+    string identifier;
+
+    ASTCopyAssignmentNode() : ASTNode(AST_NODE_TYPE::COPY_ASSIGNMENT_NODE) {}
 };
 
 struct ASTArithmeticExprNode : ASTNode {
@@ -56,10 +65,12 @@ struct ASTRootNode : ASTNode {
 };
 
 struct ASTFunctionNode : ASTNode {
-    string function_name;
-
     ASTFunctionNode() : ASTNode(AST_NODE_TYPE::FUNCTION_NODE) {}
     ASTFunctionNode(string function_name) : ASTNode(AST_NODE_TYPE::FUNCTION_NODE), function_name(function_name) {}
+};
+
+struct ASTFunctionBodyNode: ASTNode {
+    ASTFunctionBodyNode() : ASTNode(AST_NODE_TYPE::FUNCTION_BODY_NODE) {}
 };
 
 struct ASTReturnNode : ASTNode {
@@ -95,6 +106,18 @@ T* find_single_AST_node(ASTNode* parent, AST_NODE_TYPE to_find) {
     return nullptr;
 }
 
+template<typename T>
+vector<T*> find_all_AST_nodes(ASTNode* parent, AST_NODE_TYPE to_find) {
+    vector<T*> selected;
+    for (ASTNode* child : parent->children) {
+        if (child->node_type == to_find) {
+            selected.push_back(child);
+        }
+    }
+
+    return selected;
+}
+
 struct AST {
     CFG grammar;
     ASTNode* root;
@@ -102,10 +125,14 @@ struct AST {
     AST() : root(nullptr) {}
     AST(CFG grammar) : root(nullptr), grammar(grammar) {}
 
-    void clean_arithmetic_expr_tree(ASTNode*);
+    void clean_arithmetic_expr_trees(ASTNode*);
+    void clean_return_nodes(ASTNode*);
+    void clean_function_body_trees(ASTNode*);
 
     void construct_parse_tree(const vector<Token>&);
     void construct_AST_from_parse_tree();
     void construct_production_node(int, stack<ASTNode*>&);
     void construct_leaf_node(Token&, Symbol*, stack<ASTNode*>&);
+
+    void print_AST();
 };

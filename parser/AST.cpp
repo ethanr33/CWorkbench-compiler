@@ -2,6 +2,8 @@
 #include <stdexcept>
 #include <iostream>
 #include <variant>
+#include <utility>
+#include <algorithm>
 
 #include "AST.h"
 
@@ -11,7 +13,29 @@ using std::get_if;
 using std::get;
 using std::runtime_error;
 
-void clean_arithmetic_expr_tree_helper(ASTArithmeticExprNode* root) {
+void print_AST_helper(ASTNode* root, int level) {
+    std::cout << std::string(level, '-') << "Node: " << std::to_underlying(root->node_type) << std::endl;
+    for (ASTNode* child : root->children) {
+        print_AST_helper(child, level + 1);
+    }
+}
+
+void AST::print_AST() {
+    print_AST_helper(root, 0);
+}
+
+void get_statements(ASTNode* root, vector<ASTNode*>& statements) {
+
+    if (root->node_type == AST_NODE_TYPE::RETURN_NODE || root->node_type == AST_NODE_TYPE::COPY_ASSIGNMENT_NODE) {
+        statements.push_back(root);
+    } else {
+        for (ASTNode* child : root->children) {
+            get_statements(child, statements);
+        }
+    }
+}
+
+void clean_arithmetic_expr_trees_helper(ASTArithmeticExprNode* root) {
     auto it = root->children.begin();
 
     while (it != root->children.end()) {
@@ -34,11 +58,11 @@ void clean_arithmetic_expr_tree_helper(ASTArithmeticExprNode* root) {
     }
 
     if (child1->node_type == AST_NODE_TYPE::ARITHMETIC_EXPR_NODE) {
-        clean_arithmetic_expr_tree_helper(dynamic_cast<ASTArithmeticExprNode*>(child1));
+        clean_arithmetic_expr_trees_helper(dynamic_cast<ASTArithmeticExprNode*>(child1));
     }
 
     if (root->children.size() == 2 && child2->node_type == AST_NODE_TYPE::ARITHMETIC_EXPR_NODE) {
-        clean_arithmetic_expr_tree_helper(dynamic_cast<ASTArithmeticExprNode*>(child2));
+        clean_arithmetic_expr_trees_helper(dynamic_cast<ASTArithmeticExprNode*>(child2));
     }
 
     // Propagate single children up
@@ -70,18 +94,53 @@ void clean_arithmetic_expr_tree_helper(ASTArithmeticExprNode* root) {
                 parent2->op = root->op;
             }
 
-            clean_arithmetic_expr_tree_helper(parent2);
+            clean_arithmetic_expr_trees_helper(parent2);
         }
     }
 
 }
 
-void AST::clean_arithmetic_expr_tree(ASTNode* root) {
+void AST::clean_arithmetic_expr_trees(ASTNode* root) {
     if (root->node_type == AST_NODE_TYPE::ARITHMETIC_EXPR_NODE) {
-        clean_arithmetic_expr_tree_helper(dynamic_cast<ASTArithmeticExprNode*>(root));
+        clean_arithmetic_expr_trees_helper(dynamic_cast<ASTArithmeticExprNode*>(root));
     } else {
         for (ASTNode* child : root->children) {
-            clean_arithmetic_expr_tree(child);
+            clean_arithmetic_expr_trees(child);
+        }
+    }
+}
+
+void AST::clean_function_body_trees(ASTNode* root) {
+    if (root->node_type == AST_NODE_TYPE::FUNCTION_BODY_NODE) {
+        vector<ASTNode*> statements;
+        get_statements(root, statements);
+
+        for (ASTNode* statement : statements) {
+            statement->parent = root;
+        }
+
+        root->children.clear();
+        root->children = statements;
+    } else {
+        for (ASTNode* child : root->children) {
+            clean_function_body_trees(child);
+        }
+    }
+}
+
+void AST::clean_return_nodes(ASTNode* root) {
+    if (root->node_type == AST_NODE_TYPE::RETURN_NODE) {
+        ASTNode* child = root->children.at(0);
+        ASTNode* grandchild = root->children.at(0)->children.at(0);
+        grandchild->parent = root;
+        
+        root->children.clear();
+        root->children.push_back(grandchild);
+
+        delete child;
+    } else {
+        for (ASTNode* child : root->children) {
+            clean_return_nodes(child);
         }
     }
 }
@@ -91,15 +150,7 @@ void construct_AST_helper(ASTNode* root) {
         construct_AST_helper(child);
     }
 
-    if (root->node_type == AST_NODE_TYPE::FUNCTION_NODE) {
-        ASTFunctionNode* func_node = dynamic_cast<ASTFunctionNode*>(root);
-
-        for (ASTNode* child : root->children) {
-            if (child->node_type == AST_NODE_TYPE::IDENT_NODE) {
-                func_node->function_name = dynamic_cast<ASTIdentNode*>(child)->identifier;
-            }
-        }
-    } else if (root->node_type == AST_NODE_TYPE::TYPE_NODE) {
+    if (root->node_type == AST_NODE_TYPE::TYPE_NODE) {
         ASTTypeNode* type_node = dynamic_cast<ASTTypeNode*>(root);
         ASTTempNode* temp = dynamic_cast<ASTTempNode*>(type_node->children.at(0));
 
@@ -112,6 +163,10 @@ void construct_AST_helper(ASTNode* root) {
                 expr_node->op = dynamic_cast<ASTTempNode*>(child)->data;
             }
         }
+    } else if (root->node_type == AST_NODE_TYPE::COPY_ASSIGNMENT_NODE) {
+        ASTCopyAssignmentNode* assignment_node = dynamic_cast<ASTCopyAssignmentNode*>(root);
+        ASTIdentNode* ident_node = find_single_AST_node<ASTIdentNode>(assignment_node, AST_NODE_TYPE::IDENT_NODE);
+        assignment_node->identifier = ident_node->identifier;
     }
 
     auto it = root->children.begin();
@@ -119,7 +174,7 @@ void construct_AST_helper(ASTNode* root) {
     while (it != root->children.end()) {
         ASTNode* cur = *it;
 
-        if (cur->node_type == AST_NODE_TYPE::TEMP_NODE || cur->node_type == AST_NODE_TYPE::TYPE_NODE || cur->node_type == AST_NODE_TYPE::IDENT_NODE) {
+        if (cur->node_type == AST_NODE_TYPE::TEMP_NODE || cur->node_type == AST_NODE_TYPE::TYPE_NODE) {
             it = root->children.erase(it, it + 1);
             delete cur;
         } else {
@@ -131,7 +186,9 @@ void construct_AST_helper(ASTNode* root) {
 
 void AST::construct_AST_from_parse_tree() {
     construct_AST_helper(root);
-    clean_arithmetic_expr_tree(root);
+    clean_arithmetic_expr_trees(root);
+    clean_function_body_trees(root);
+    clean_return_nodes(root);
 }
 
 void AST::construct_leaf_node(Token& token, Symbol* symbol, stack<ASTNode*>& ast_stack) {
@@ -159,12 +216,18 @@ void AST::construct_production_node(int production_index, stack<ASTNode*>& ast_s
         parent_node->parent = nullptr;
     } else if (production_symbol == "<function>") {
         parent_node = new ASTFunctionNode();
-    } else if (production_symbol == "<return>") {
+    } else if (production_symbol == "<return>" || production_symbol == "<returnval>") {
         parent_node = new ASTReturnNode();
     } else if (production_symbol == "<type>") {
         parent_node = new ASTTypeNode();
     } else if (production_symbol == "<arithmeticexpr>" || production_symbol == "<arithmeticexprsuffix>") {
         parent_node = new ASTArithmeticExprNode();
+    } else if (production_symbol == "<funcbody>" || production_symbol == "<funcbodyprefix>") {
+        parent_node = new ASTFunctionBodyNode();
+    } else if (production_symbol == "<statement>") {
+        parent_node = new ASTCopyAssignmentNode();
+    } else {
+        throw runtime_error("Attempted to create node for unknown production symbol " + production_symbol);
     }
     
     for (int i = 0; i < rule.production_rule.size(); i++) {
@@ -178,6 +241,11 @@ void AST::construct_production_node(int production_index, stack<ASTNode*>& ast_s
         parent_node->children.push_back(child);
         ast_stack.pop();
     }
+
+    // Rules are applied and pushed to the stack in the order that they appear
+    // When the stack is popped from, nodes are retrieved in reverse order
+    // So the list of children needs to be reversed to preserve the original order of statements
+    std::reverse(parent_node->children.begin(), parent_node->children.end());
 
     ast_stack.push(parent_node);
 }

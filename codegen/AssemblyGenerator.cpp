@@ -12,6 +12,25 @@ using std::to_string;
     When more functionality is 
 */
 
+ASTFunctionNode* AssemblyGenerator::find_entry_point(ASTNode* root, const string& entry_point_name) {
+    if (root->node_type == AST_NODE_TYPE::FUNCTION_NODE) {
+        ASTIdentNode* ident = find_single_AST_node<ASTIdentNode>(root, AST_NODE_TYPE::IDENT_NODE);
+        if (ident->identifier == entry_point_name) {
+            return root;
+        } else {
+            return nullptr;
+        }
+    } else {
+        for (ASTNode* child : root->children) {
+            ASTFunctionNode* result = find_entry_point(child, entry_point_name);
+            if (result != nullptr) {
+                return result;
+            }
+        }
+        return nullptr;
+    }
+}
+
 void AssemblyGenerator::generate_arithmetic_expr_assembly(ASTArithmeticExprNode* root, const string& register_name, string& output) const {
     
     bool all_const = true;
@@ -41,18 +60,7 @@ void AssemblyGenerator::convert_AST_to_assembly(AST& ast) {
 
     // Locate our entry point, int main()
 
-    ASTFunctionNode* entry_point = nullptr;
-
-    for (ASTNode* child : root->children) {
-        if (child->node_type == AST_NODE_TYPE::FUNCTION_NODE) {
-            ASTFunctionNode* potential_entry_point = dynamic_cast<ASTFunctionNode*>(child);
-
-            if (potential_entry_point->function_name == "main") {
-                entry_point = potential_entry_point;
-                break;
-            }
-        }
-    }
+    ASTFunctionNode* entry_point = find_entry_point(root, "main");
 
     // If there is no entry point, then the program shouldn't compile (for now)
     if (entry_point == nullptr) {
