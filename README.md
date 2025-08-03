@@ -64,5 +64,10 @@ For Linux:
 
 This will compile the input C++ file and emit NASM-compatible assembly to `out.asm`.
 
+To compile without running the generated executable: 
+
+```bash
+./run.sh <file path> --compile-only
+```
 
 
