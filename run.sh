@@ -33,8 +33,10 @@ if [ -f $1 ]; then
         fi
     else
         echo "Compiler exited with error code $?"
+        exit 1
     fi
 
 else
     echo "$1: file not found"
+    exit 1
 fi
