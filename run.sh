@@ -10,10 +10,10 @@ if [ $# -le 0 ]; then
 fi 
 
 i=2;
-compile_only=false
+compile_only=0
 while [[ i -le $# ]]; do
     case ${!i} in
-            --compile-only|-c) compile_only=true ;;
+            --compile-only|-c) compile_only=1 ;;
         *) echo "Unknown option: ${!i}" ; exit 1 ;;
     esac
     (( i++ ))
@@ -27,7 +27,7 @@ if [ -f $1 ]; then
         nasm tmp/out.asm -f elf64 -o tmp/out.o
         ld tmp/out.o -o tmp/out
 
-        if ! [ compile_only ]; then 
+        if ! (($compile_only)); then 
             tmp/out
             exit $?
         fi
