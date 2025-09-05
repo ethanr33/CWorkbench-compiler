@@ -107,5 +107,5 @@ struct AST {
     void construct_parse_tree(const vector<Token>&);
     void construct_AST_from_parse_tree();
     void construct_production_node(int, stack<ASTNode*>&);
-    void construct_leaf_node(Token&, Symbol*, stack<ASTNode*>&);
+    void construct_leaf_node(Token&, SymbolId, stack<ASTNode*>&);
 };

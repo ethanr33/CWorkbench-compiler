@@ -134,8 +134,8 @@ void AST::construct_AST_from_parse_tree() {
     clean_arithmetic_expr_tree(root);
 }
 
-void AST::construct_leaf_node(Token& token, Symbol* symbol, stack<ASTNode*>& ast_stack) {
-    switch (symbol->corresponding_token) {
+void AST::construct_leaf_node(Token& token, SymbolId symbol, stack<ASTNode*>& ast_stack) {
+    switch (grammar.symbol_arena.get(symbol).corresponding_token) {
         case TOKEN_TYPE::INT_CONST:
             ast_stack.push(new ASTIntConstNode(std::stoi(token.value)));
             break;
@@ -143,14 +143,14 @@ void AST::construct_leaf_node(Token& token, Symbol* symbol, stack<ASTNode*>& ast
             ast_stack.push(new ASTIdentNode(token.value));
             break;
         default:
-            ast_stack.push(new ASTTempNode(symbol->symbol, symbol->corresponding_token));
+            ast_stack.push(new ASTTempNode(grammar.symbol_arena.get(symbol).symbol, grammar.symbol_arena.get(symbol).corresponding_token));
             break;
     }
 }
 
 void AST::construct_production_node(int production_index, stack<ASTNode*>& ast_stack) {
     Rule rule = grammar.productions.at(production_index);
-    string production_symbol = rule.symbol->symbol;
+    string production_symbol =  grammar.symbol_arena.get(rule.symbol).symbol;
 
     ASTNode* parent_node;
 
@@ -184,7 +184,7 @@ void AST::construct_production_node(int production_index, stack<ASTNode*>& ast_s
 
 void AST::construct_parse_tree(const vector<Token>& token_stream) {
     stack<ASTNode*> ast_stack;
-    stack<std::variant<Symbol*, int>> symbol_stack;
+    stack<std::variant<SymbolId, int>> symbol_stack;
 
     int i = 0;
 
@@ -193,10 +193,10 @@ void AST::construct_parse_tree(const vector<Token>& token_stream) {
 
     while (true) {
 
-        if (get_if<Symbol*>(&symbol_stack.top())) {
-            Symbol* stack_top = *get_if<Symbol*>(&symbol_stack.top());
+        if (get_if<SymbolId>(&symbol_stack.top())) {
+            SymbolId stack_top = *get_if<SymbolId>(&symbol_stack.top());
 
-            if (stack_top->is_terminal) {
+            if (grammar.symbol_arena.get(stack_top).is_terminal) {
                 // Check to see if we have reached end of input and we have reached the end of input token as well
                 if (stack_top == grammar.symbols.at("$")) {
                     // If for some reason we reach the end of input symbol on the stack but there are still tokens left to use, then there is a syntax error
@@ -211,7 +211,7 @@ void AST::construct_parse_tree(const vector<Token>& token_stream) {
                 Token cur_token = token_stream.at(i);
                 
                 // Check if out token's TOKEN_TYPE matches with the stack top's symbol's TOKEN_TYPE
-                if (TERMINAL_MAP.at(stack_top->symbol) == cur_token.token_type) {
+                if (TERMINAL_MAP.at(grammar.symbol_arena.get(stack_top).symbol) == cur_token.token_type) {
                     // Consume input symbol and pop from stack
                     i++;
 
@@ -227,8 +227,8 @@ void AST::construct_parse_tree(const vector<Token>& token_stream) {
                 // If terminal symbol, consume token from the input string and pop
                 Token cur_token = token_stream.at(i);
                 
-                Symbol* cur_symbol = stack_top;
-                Symbol* next_token_symbol = grammar.token_to_symbol(cur_token);
+                SymbolId cur_symbol = stack_top;
+                SymbolId next_token_symbol = grammar.token_to_symbol(cur_token);
 
                 if (grammar.parse_table.find(cur_symbol) == grammar.parse_table.end()) {
                     throw runtime_error("Syntax error");
@@ -239,7 +239,7 @@ void AST::construct_parse_tree(const vector<Token>& token_stream) {
                 }
 
                 int production_number = grammar.parse_table.at(cur_symbol).at(next_token_symbol);
-                vector<Symbol*> production = grammar.productions.at(production_number).production_rule;
+                vector<SymbolId> production = grammar.productions.at(production_number).production_rule;
 
                 symbol_stack.pop();
 

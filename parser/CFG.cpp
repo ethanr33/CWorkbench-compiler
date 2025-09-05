@@ -16,25 +16,23 @@ using std::unordered_map;
  * 
  * @param token - The token object to find the symbol of
  * 
- * @return a pointer to the token's corresponding symbol
- * @return nullptr if the token does not have a corresponding symbol
+ * @return a SymbolId the token's corresponding symbol
+ * @return the invalid symbol id if the token does not have a corresponding symbol
  */
-Symbol* CFG::token_to_symbol(Token& token) const {
+SymbolId CFG::token_to_symbol(Token& token) const {
 
-    for (auto it = symbols.begin(); it != symbols.end(); it++) {
-        Symbol* symbol = (*it).second;
-
-        if (symbol->corresponding_token == TOKEN_TYPE::NON_TOKEN) {
+    for (SymbolId id = 0; id < symbol_arena.get_max_id(); id++) {
+        if (symbol_arena.get(id).corresponding_token == TOKEN_TYPE::NON_TOKEN) {
             // This symbol is a non-terminal so we can't match it with a token
             continue;
         }
 
-        if (symbol->corresponding_token == token.token_type) {
-            return symbol;
+        if (symbol_arena.get(id).corresponding_token == token.token_type) {
+            return id;
         }
     }
 
-    return nullptr;
+    return Arena<Symbol>::invalid_id;
 }
 
 /**
@@ -49,12 +47,12 @@ void CFG::construct_FIRST_sets() {
     do {
         sets_changed = false;
         // For every symbol X (terminal or non-terminal)
-        for (const auto& [symbol_string, symbol] : symbols) {
-            int prev_size = symbol->FIRST.size();
+        for (SymbolId id = 0; id < symbol_arena.get_max_id(); id++) {
+            int prev_size = symbol_arena.get(id).FIRST.size();
 
-            if (symbol->is_terminal) {
+            if (symbol_arena.get(id).is_terminal) {
                 // If X is a terminal, FIRST(X) = {X}
-                symbol->FIRST.insert(symbol);
+                symbol_arena.get(id).FIRST.insert(id);
             } else {
 
                 // If X -> Y1 Y2 .. Yk 
@@ -64,23 +62,23 @@ void CFG::construct_FIRST_sets() {
                 bool produces_eps = false;
 
                 for (const auto& rule : productions) {
-                    if (rule.symbol->symbol == symbol->symbol) {
+                    if (symbol_arena.get(rule.symbol).symbol == symbol_arena.get(id).symbol) {
                         bool all_epsilon = true;
 
                         // Iterate through all Yi in X -> Y1 Y2 .. Yk
                         for (const auto& Y_i : rule.production_rule) {
                             // If Y_i produces epsilon, move on to Y_(i + 1)
                             // Otherwise we can add this symbol's FIRST set to X's FIRST set
-                            if (Y_i->FIRST.find(symbols.at("ε")) == Y_i->FIRST.end()) {
+                            if (symbol_arena.get(Y_i).FIRST.find(symbols.at("ε")) == symbol_arena.get(Y_i).FIRST.end()) {
                                 all_epsilon = false;
-                                symbol->FIRST.insert(Y_i->FIRST.begin(), Y_i->FIRST.end());
+                                symbol_arena.get(id).FIRST.insert(symbol_arena.get(Y_i).FIRST.begin(), symbol_arena.get(Y_i).FIRST.end());
                                 break;
                             }
                         }
 
                         // If all Y_i produces epsilon
                         if (all_epsilon) {
-                            symbol->FIRST.insert(symbols.at("ε"));
+                            symbol_arena.get(id).FIRST.insert(symbols.at("ε"));
                         }
                     }
                 }
@@ -88,7 +86,7 @@ void CFG::construct_FIRST_sets() {
                 // If all Yi could derive epsilon, add epsilon to X's FIRST set
             }
 
-            if (prev_size != symbol->FIRST.size()) {
+            if (prev_size != symbol_arena.get(id).FIRST.size()) {
                 sets_changed = true;
             }
         }
@@ -107,20 +105,20 @@ void CFG::construct_FOLLOW_sets() {
     // Create end of input symbol $, and add it to FOLLOw(S)
     // where S is the start production
 
-    symbols.at("<root>")->FOLLOW.insert(symbols.at("$"));
+    symbol_arena.get(symbols.at("<root>")).FOLLOW.insert(symbols.at("$"));
 
 
 
     do {
         sets_changed = false;
-        for (const auto& [symbol_string, symbol] : symbols) {
-            int prev_size = symbol->FOLLOW.size();
+        for (SymbolId id = 0; id < symbol_arena.get_max_id(); id++) {
+            int prev_size = symbol_arena.get(id).FOLLOW.size();
 
 
             // if the symbol is terminal, it cannot have anything following it.
             // So its FOLLOw set is empty.
             // we can just skip over it
-            if (symbol->is_terminal) {
+            if (symbol_arena.get(id).is_terminal) {
                 continue;
             }
 
@@ -129,13 +127,11 @@ void CFG::construct_FOLLOW_sets() {
             // Add FIRST(beta) to FOLLOW(A)
 
             for (const Rule& rule : productions) {
-                Symbol* B = rule.symbol;
                 
-
                 bool has_nonterminal = false;
 
-                for (const Symbol* rule_symbol : rule.production_rule) {
-                    if (!rule_symbol->is_terminal) {
+                for (const SymbolId rule_symbol : rule.production_rule) {
+                    if (!symbol_arena.get(rule_symbol).is_terminal) {
                         has_nonterminal = true;
                     }
                 }   
@@ -147,10 +143,10 @@ void CFG::construct_FOLLOW_sets() {
 
                 // Find all instances in this rule which match the production above
                 for (int i = 0; i < rule.production_rule.size(); i++) {
-                    Symbol* A = rule.production_rule.at(i);
+                    SymbolId A = rule.production_rule.at(i);
 
-                    if (!A->is_terminal) {
-                        Symbol* beta = nullptr;
+                    if (!symbol_arena.get(A).is_terminal) {
+                        SymbolId beta = Arena<Symbol>::invalid_id;
 
                         if (i + 1 < rule.production_rule.size()) {
                             beta = rule.production_rule.at(i + 1);
@@ -162,21 +158,21 @@ void CFG::construct_FOLLOW_sets() {
                         // where b is the nonterminal or terminal symbol that immediately follows after the first character of beta.
                         // If there is none, b is epsilon.
 
-                        if (beta != nullptr) {
-                            unordered_set<Symbol*> beta_copy = beta->FIRST;
+                        if (beta != Arena<Symbol>::invalid_id) {
+                            unordered_set<SymbolId> beta_copy = symbol_arena.get(beta).FIRST;
                             beta_copy.erase(symbols.at("ε"));
-                            A->FOLLOW.insert(beta_copy.begin(), beta_copy.end());
+                            symbol_arena.get(A).FOLLOW.insert(beta_copy.begin(), beta_copy.end());
                         }
 
                         // Next, if epsilon is in FIRST(beta) add FOLLOW(B) to FOLLOW(A)
                         // No production produces epsilon, so FIRST(beta) is only epsilon is beta is epsilon
                         // This is only the case if there is no production or terminal after A
 
-                        if (beta == nullptr) {
-                            A->FOLLOW.insert(B->FOLLOW.begin(), B->FOLLOW.end());
-                        } else if (beta->FIRST.find(symbols.at("ε")) != beta->FIRST.end()) {
+                        if (beta == Arena<Symbol>::invalid_id) {
+                            symbol_arena.get(A).FOLLOW.insert(symbol_arena.get(rule.symbol).FOLLOW.begin(), symbol_arena.get(rule.symbol).FOLLOW.end());
+                        } else if (symbol_arena.get(beta).FIRST.find(symbols.at("ε")) != symbol_arena.get(beta).FIRST.end()) {
                             // epsilon is in FIRST(beta)
-                            A->FOLLOW.insert(B->FOLLOW.begin(), B->FOLLOW.end());
+                            symbol_arena.get(A).FOLLOW.insert(symbol_arena.get(rule.symbol).FOLLOW.begin(), symbol_arena.get(rule.symbol).FOLLOW.end());
                         }
 
 
@@ -185,7 +181,7 @@ void CFG::construct_FOLLOW_sets() {
             }
 
 
-            if (prev_size != symbol->FOLLOW.size()) {
+            if (prev_size != symbol_arena.get(id).FOLLOW.size()) {
                 sets_changed = true;
             }
         }
@@ -205,14 +201,14 @@ void CFG::construct_parse_table() {
 
     // Iterate through all nonterminal symbols A
     for (const auto& [nonterminal_symbol_string, nonterminal_symbol] : symbols) {
-        if (nonterminal_symbol->is_terminal) {
+        if (symbol_arena.get(nonterminal_symbol).is_terminal) {
             continue;
         }
 
         // Next, iterate through all terminal symbols a
         for (const auto& [symbol_string, terminal_symbol]: symbols) {
 
-            if (!terminal_symbol->is_terminal) {
+            if (!symbol_arena.get(terminal_symbol).is_terminal) {
                 continue;
             }
 
@@ -230,7 +226,7 @@ void CFG::construct_parse_table() {
 
                     // Calculate what FIRST(w) is by potentially iterating over each symbol
 
-                    unordered_set<Symbol*> FIRST_w = rule.production_rule.at(0)->FIRST;
+                    unordered_set<SymbolId> FIRST_w = symbol_arena.get(rule.production_rule.at(0)).FIRST;
                     
                     // If the first symbol produces epsilon, then we must add the second symbol's FIRST set to FIRST(w)
                     // If the second symbol produces epsilon, then we add the third FIRST set, and so on
@@ -238,10 +234,10 @@ void CFG::construct_parse_table() {
                     // In that case, epsilon will be in FIRST(w)
                     if (FIRST_w.find(symbols.at("ε")) != FIRST_w.end()) {
                         for (int symbol_index = 1; symbol_index < rule.production_rule.size(); symbol_index++) {
-                            Symbol* cur_symbol = rule.production_rule.at(symbol_index);
-                            FIRST_w.insert(cur_symbol->FIRST.begin(), cur_symbol->FIRST.end());
+                            SymbolId cur_symbol = rule.production_rule.at(symbol_index);
+                            FIRST_w.insert(symbol_arena.get(cur_symbol).FIRST.begin(), symbol_arena.get(cur_symbol).FIRST.end());
 
-                            if (cur_symbol->FIRST.find(symbols.at("ε")) == cur_symbol->FIRST.end()) {
+                            if (symbol_arena.get(cur_symbol).FIRST.find(symbols.at("ε")) == symbol_arena.get(cur_symbol).FIRST.end()) {
                                 FIRST_w.erase(FIRST_w.find(symbols.at("ε")));
                                 break;
                             }
@@ -255,10 +251,10 @@ void CFG::construct_parse_table() {
                     // Check if either of the conditions mentioned above are true
                     bool condition_1 = FIRST_w.find(terminal_symbol) != FIRST_w.end();
                     bool condition_2 = FIRST_w.find(symbols.at("ε")) != FIRST_w.end()
-                                        && nonterminal_symbol->FOLLOW.find(terminal_symbol) != nonterminal_symbol->FOLLOW.end(); 
+                                        && symbol_arena.get(nonterminal_symbol).FOLLOW.find(terminal_symbol) != symbol_arena.get(nonterminal_symbol).FOLLOW.end(); 
 
                     if (condition_1 || condition_2) {
-                        unordered_map<Symbol*, int> inner_map;
+                        unordered_map<SymbolId, int> inner_map;
 
                         if (parse_table.find(nonterminal_symbol) == parse_table.end()) {
                             inner_map = {{terminal_symbol, i}};
@@ -293,16 +289,16 @@ bool is_nonterminal_symbol(const string& symbol) {
  */
 void CFG::generate_terminal_rules() {
 
-    Symbol* end_of_input_symbol = new Symbol("$", true, TOKEN_TYPE::END_OF_INPUT);
-    symbols.insert({end_of_input_symbol->symbol, end_of_input_symbol});
+    SymbolId endofinput_sid = symbol_arena.add(Symbol("$", true, TOKEN_TYPE::END_OF_INPUT));
+    symbols.insert({"$", endofinput_sid});
 
-    Symbol* epsilon = new Symbol("ε", true, TOKEN_TYPE::EPSILON);
-    symbols.insert({epsilon->symbol, epsilon});
+    SymbolId epsilon_sid = symbol_arena.add(Symbol("ε", true, TOKEN_TYPE::END_OF_INPUT));
+    symbols.insert({"ε", epsilon_sid});
 
-    for (const auto& [symbol_string, symbol] : symbols) {
-        if (symbol->is_terminal) {
-            symbol->corresponding_token = TERMINAL_MAP.at(symbol->symbol);
-            productions.push_back(TerminalRule(symbol, TERMINAL_MAP.at(symbol->symbol)));
+    for (SymbolId id = 0; id < symbol_arena.get_max_id(); id++) {
+        if (symbol_arena.get(id).is_terminal) {
+            symbol_arena.get(id).corresponding_token = TERMINAL_MAP.at(symbol_arena.get(id).symbol);
+            productions.push_back(TerminalRule(id, TERMINAL_MAP.at(symbol_arena.get(id).symbol)));
         }
     }
 
@@ -343,7 +339,7 @@ void CFG::load_data(const string& file_path) {
         ss >> production_nonterminal;
 
         if (symbols.find(production_nonterminal) == symbols.end()) {
-            symbols.insert({production_nonterminal, new Symbol(production_nonterminal, false)});
+            symbols.insert({production_nonterminal, symbol_arena.add(Symbol(production_nonterminal, false))});
         }
 
         string separator;
@@ -353,11 +349,11 @@ void CFG::load_data(const string& file_path) {
             throw runtime_error("Found " + separator + " as separator, when it should be " + SEPARATOR);
         }
 
-        vector<Symbol*> rule;
+        vector<SymbolId> rule;
 
         string cur_token;
         while (ss >> cur_token) {
-            Symbol* cur_symbol;
+            SymbolId cur_symbol;
 
             if (cur_token == "|") {
                 if (rule.size() == 0) {
@@ -377,7 +373,7 @@ void CFG::load_data(const string& file_path) {
             if (symbols.find(cur_token) != symbols.end()) {
                 cur_symbol = symbols.at(cur_token);
             } else {
-                cur_symbol = new Symbol(cur_token, !is_nonterminal_symbol(cur_token));
+                cur_symbol = symbol_arena.add(Symbol(cur_token, !is_nonterminal_symbol(cur_token)));
                 symbols.insert({cur_token, cur_symbol});
             }
 

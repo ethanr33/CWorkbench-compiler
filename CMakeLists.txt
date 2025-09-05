@@ -22,6 +22,7 @@ set(MAIN
 
 set(SOURCES
     tools/debug.cpp
+    tools/memory.cpp
     lexer/Lexer.cpp 
     lexer/Token.cpp
     parser/CFG.cpp
