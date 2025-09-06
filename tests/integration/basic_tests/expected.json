@@ -1,41 +1,41 @@
 
 {
-    "return0.cpp": {
+    "return0.c": {
         "error": false,
         "returncode": 0
     },
-    "return1.cpp": {
+    "return1.c": {
         "error": false,
         "returncode": 1
     },
-    "return100.cpp": {
+    "return100.c": {
         "error": false,
         "returncode": 100
     },
-    "spaces.cpp": {
+    "spaces.c": {
         "error": false,
         "returncode": 0
     },
-    "newlines.cpp": {
+    "newlines.c": {
         "error": false,
         "returncode": 0
     },
-    "missingretval.cpp": {
+    "missingretval.c": {
         "error": true
     },
-    "missingsemicolon.cpp": {
+    "missingsemicolon.c": {
         "error": true
     },
-    "missingparen.cpp": {
+    "missingparen.c": {
         "error": true
     },
-    "wrongreturncase.cpp": {
+    "wrongreturncase.c": {
         "error": true
     },
-    "missingbrace.cpp": {
+    "missingbrace.c": {
         "error": true
     },
-    "noentrypoint.cpp": {
+    "noentrypoint.c": {
         "error": true
     }
 }

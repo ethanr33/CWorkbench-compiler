@@ -1,6 +1,6 @@
-# CppWorkbench Compiler
+# CWorkbench Compiler
 
-CppWorkbench is a C++ compiler written in C++. It compiles a subset of the C++ language into x86-64 NASM assembly. This repository contains only the compiler core, the web application is in a separate project. The goal of the project as a whole is to integrate this compiler with a web application to let users test the compiled code and run their c++ online.
+CWorkbench is a C compiler written in C++. It compiles a subset of the C language into x86-64 NASM assembly. This repository contains only the compiler core, the web application is in a separate project. The goal of the project as a whole is to integrate this compiler with a web application to let users test the compiled code and run their C online.
 
 ## Features
 
@@ -8,13 +8,13 @@ CppWorkbench is a C++ compiler written in C++. It compiles a subset of the C++ l
 - AST construction and traversal
 - NASM-supported x86-64 code generation
 
-# Supported C++ features
+# Supported C features
 
-Currently, the compiler only supports C++ programs with a simple main function which returns an integer or sum of integers. This will be expanded upon in the future.
+Currently, the compiler only supports C programs with a simple main function which returns an integer or sum of integers. This will be expanded upon in the future.
 
 Example program:
 
-```c++
+```c
     int main() {
         return 0;
     }
@@ -24,7 +24,7 @@ Example program:
 
 ```
 
-cppworkstation-compiler/
+cworkstation-compiler/
 ├── codegen/         # NASM assembly code generation
 ├── lexer/           # Tokenizer implementation
 ├── parser/          # Grammar definitions, LL(1) parser and AST generator
@@ -62,7 +62,7 @@ For Linux:
 ./run.sh <file path>
 ```
 
-This will compile the input C++ file and emit NASM-compatible assembly to `out.asm`.
+This will compile the input C file and emit NASM-compatible assembly to `out.asm`.
 
 To compile without running the generated executable: 
 
