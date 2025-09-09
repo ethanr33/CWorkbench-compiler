@@ -3,9 +3,24 @@
 #include <cstdint>
 
 template<typename T>
-class Arena {
-    using Id = uint32_t;
+class AbstractArena {
+    public:
 
+        using Id = uint32_t;
+
+        static constexpr Id invalid_id = -1;
+
+        virtual Id add(T&&) = 0;
+
+        virtual T& get(Id) = 0;
+
+        virtual const T& get(Id id) const = 0;
+
+        virtual Id get_max_id() const = 0;
+};
+
+template<typename T>
+class Arena : public AbstractArena {
     private:
         std::vector<T> items;
     public:

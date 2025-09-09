@@ -11,7 +11,7 @@ using std::get_if;
 using std::get;
 using std::runtime_error;
 
-void clean_arithmetic_expr_tree_helper(ASTArithmeticExprNode* root) {
+void clean_arithmetic_expr_tree_helper(ASTNodeId root) {
     auto it = root->children.begin();
 
     while (it != root->children.end()) {
@@ -76,27 +76,25 @@ void clean_arithmetic_expr_tree_helper(ASTArithmeticExprNode* root) {
 
 }
 
-void AST::clean_arithmetic_expr_tree(ASTNode* root) {
-    if (root->node_type == AST_NODE_TYPE::ARITHMETIC_EXPR_NODE) {
-        clean_arithmetic_expr_tree_helper(dynamic_cast<ASTArithmeticExprNode*>(root));
+void AST::clean_arithmetic_expr_tree(ASTNodeId root) {
+    if (node_arena.get(root).node_type == AST_NODE_TYPE::ARITHMETIC_EXPR_NODE) {
+        clean_arithmetic_expr_tree_helper(root);
     } else {
-        for (ASTNode* child : root->children) {
+        for (ASTNodeId child : node_arena.get(root).children) {
             clean_arithmetic_expr_tree(child);
         }
     }
 }
 
-void construct_AST_helper(ASTNode* root) {
-    for (ASTNode* child : root->children) {
+void AST::construct_AST_helper(ASTNodeId root) {
+    for (ASTNodeId child : node_arena.get(root)->children) {
         construct_AST_helper(child);
     }
 
-    if (root->node_type == AST_NODE_TYPE::FUNCTION_NODE) {
-        ASTFunctionNode* func_node = dynamic_cast<ASTFunctionNode*>(root);
-
-        for (ASTNode* child : root->children) {
-            if (child->node_type == AST_NODE_TYPE::IDENT_NODE) {
-                func_node->function_name = dynamic_cast<ASTIdentNode*>(child)->identifier;
+    if (node_arena.get(root)->node_type == AST_NODE_TYPE::FUNCTION_NODE) {
+        for (ASTNodeId child : node_arena.get(root)->children) {
+            if (node_arena.get(child)->node_type == AST_NODE_TYPE::IDENT_NODE) {
+                node_arena.get(root)->function_name = dynamic_cast<ASTIdentNode*>(node_arena.get(child))->identifier;
             }
         }
     } else if (root->node_type == AST_NODE_TYPE::TYPE_NODE) {
@@ -134,37 +132,36 @@ void AST::construct_AST_from_parse_tree() {
     clean_arithmetic_expr_tree(root);
 }
 
-void AST::construct_leaf_node(Token& token, SymbolId symbol, stack<ASTNode*>& ast_stack) {
+void AST::construct_leaf_node(Token& token, SymbolId symbol, stack<ASTNodeId>& ast_stack) {
     switch (grammar.symbol_arena.get(symbol).corresponding_token) {
         case TOKEN_TYPE::INT_CONST:
-            ast_stack.push(new ASTIntConstNode(std::stoi(token.value)));
+            ast_stack.push(node_arena.add(std::make_unique<ASTIntConstNode>(std::stoi(token.value))));
             break;
         case TOKEN_TYPE::IDENTIFIER:
-            ast_stack.push(new ASTIdentNode(token.value));
+            ast_stack.push(node_arena.add(std::make_unique<ASTIdentNode>(token.value)));
             break;
         default:
-            ast_stack.push(new ASTTempNode(grammar.symbol_arena.get(symbol).symbol, grammar.symbol_arena.get(symbol).corresponding_token));
+            ast_stack.push(node_arena.add(std::make_unique<ASTTempNode>(grammar.symbol_arena.get(symbol).symbol, grammar.symbol_arena.get(symbol).corresponding_token)));
             break;
     }
 }
 
-void AST::construct_production_node(int production_index, stack<ASTNode*>& ast_stack) {
+void AST::construct_production_node(int production_index, stack<ASTNodeId>& ast_stack) {
     Rule rule = grammar.productions.at(production_index);
     string production_symbol =  grammar.symbol_arena.get(rule.symbol).symbol;
 
-    ASTNode* parent_node;
+    ASTNodeId parent_node;
 
     if (production_symbol == "<root>") {
-        parent_node = new ASTRootNode();
-        parent_node->parent = nullptr;
+        parent_node = node_arena.add(std::make_unique<ASTRootNode>());
     } else if (production_symbol == "<function>") {
-        parent_node = new ASTFunctionNode();
+        parent_node = node_arena.add(std::make_unique<ASTFunctionNode>());
     } else if (production_symbol == "<return>") {
-        parent_node = new ASTReturnNode();
+        parent_node = node_arena.add(std::make_unique<ASTReturnNode>());
     } else if (production_symbol == "<type>") {
-        parent_node = new ASTTypeNode();
+        parent_node = node_arena.add(std::make_unique<ASTTypeNode>());
     } else if (production_symbol == "<arithmeticexpr>" || production_symbol == "<arithmeticexprsuffix>") {
-        parent_node = new ASTArithmeticExprNode();
+        parent_node = node_arena.add(std::make_unique<ASTArithmeticExprNode>());
     }
     
     for (int i = 0; i < rule.production_rule.size(); i++) {
@@ -172,10 +169,10 @@ void AST::construct_production_node(int production_index, stack<ASTNode*>& ast_s
             continue;
         }
 
-        ASTNode* child = ast_stack.top();
-        child->parent = parent_node;
+        ASTNodeId child = ast_stack.top();
+        node_arena.get(child)->parent = parent_node;
 
-        parent_node->children.push_back(child);
+        node_arena.get(parent_node)->children.push_back(child);
         ast_stack.pop();
     }
 
@@ -183,7 +180,7 @@ void AST::construct_production_node(int production_index, stack<ASTNode*>& ast_s
 }
 
 void AST::construct_parse_tree(const vector<Token>& token_stream) {
-    stack<ASTNode*> ast_stack;
+    stack<ASTNodeId> ast_stack;
     stack<std::variant<SymbolId, int>> symbol_stack;
 
     int i = 0;
