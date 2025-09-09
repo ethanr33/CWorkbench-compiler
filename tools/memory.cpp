@@ -1,46 +1,23 @@
 
-#include <vector>
-#include <cstdint>
+#include "memory.h"
 
 template<typename T>
-class AbstractArena {
-    public:
-
-        using Id = uint32_t;
-
-        static constexpr Id invalid_id = -1;
-
-        virtual Id add(T&&) = 0;
-
-        virtual T& get(Id) = 0;
-
-        virtual const T& get(Id id) const = 0;
-
-        virtual Id get_max_id() const = 0;
-};
+ID::DefaultId Arena<T>::add(T&& item) {
+    items.push_back(std::move(item));
+    return static_cast<ID::DefaultId>(items.size() - 1);
+}
 
 template<typename T>
-class Arena : public AbstractArena {
-    private:
-        std::vector<T> items;
-    public:
+T& Arena<T>::get(ID::DefaultId id) {
+    return items.at(id);
+}
 
-        static constexpr Id invalid_id = -1;
+template<typename T>
+const T& Arena<T>::get(ID::DefaultId id) const {
+    return items.at(id);
+}
 
-        Id add(T&& item) {
-            items.push_back(std::move(item));
-            return static_cast<Id>(items.size() - 1);
-        } 
-
-        T& get(Id id) {
-            return items.at(id);
-        }
-
-        const T& get(Id id) const {
-            return items.at(id);
-        }
-
-        Id get_max_id() const {
-            return static_cast<Id>(items.size());
-        }
-};
+template<typename T>
+ID::DefaultId Arena<T>::get_max_id() const {
+    return static_cast<ID::DefaultId>(items.size());
+}

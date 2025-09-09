@@ -1,0 +1,35 @@
+
+#include "ASTNodes.h"
+#include "ASTBuilders.h"
+
+void ASTRootNode::visit(NodeVisitor& visitor) {
+    visitor.visit(*this);
+}
+
+void ASTFunctionNode::visit(NodeVisitor& visitor) {
+    visitor.visit(*this);
+}
+
+void ASTReturnNode::visit(NodeVisitor& visitor) {
+    visitor.visit(*this);
+}
+
+void ASTTypeNode::visit(NodeVisitor& visitor) {
+    visitor.visit(*this);
+}
+
+void ASTIntConstNode::visit(NodeVisitor& visitor) {
+    visitor.visit(*this);
+}
+
+void ASTIdentNode::visit(NodeVisitor& visitor) {
+    visitor.visit(*this);
+}
+
+void ASTBinaryOpNode::visit(NodeVisitor& visitor) {
+    visitor.visit(*this);
+}
+
+void ASTTempNode::visit(NodeVisitor& visitor) {
+    visitor.visit(*this);
+}

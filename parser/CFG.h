@@ -8,7 +8,7 @@
 #include <memory>
 
 #include "../lexer/Lexer.h"
-#include "../tools/memory.cpp"
+#include "../tools/memory.h"
 
 using std::vector;
 using std::string;

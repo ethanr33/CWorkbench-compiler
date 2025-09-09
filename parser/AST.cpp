@@ -11,128 +11,106 @@ using std::get_if;
 using std::get;
 using std::runtime_error;
 
-void clean_arithmetic_expr_tree_helper(ASTNodeId root) {
-    auto it = root->children.begin();
+// void clean_arithmetic_expr_tree_helper(ID::ASTNodeId root) {
+//     auto it = root->children.begin();
 
-    while (it != root->children.end()) {
-        ASTNode* child = *it;
+//     while (it != root->children.end()) {
+//         ASTNode* child = *it;
 
-        // Remove empty arithmetic expr nodes
-        if (child->node_type == AST_NODE_TYPE::ARITHMETIC_EXPR_NODE && child->children.size() == 0) {
-            it = root->children.erase(it, it + 1);
-            delete child;
-        } else {
-            it++;
-        }
-    }
+//         // Remove empty arithmetic expr nodes
+//         if (child->node_type == AST_NODE_TYPE::ARITHMETIC_EXPR_NODE && child->children.size() == 0) {
+//             it = root->children.erase(it, it + 1);
+//             delete child;
+//         } else {
+//             it++;
+//         }
+//     }
 
-    ASTNode* child1 = root->children.at(0);
-    ASTNode* child2;
+//     ASTNode* child1 = root->children.at(0);
+//     ASTNode* child2;
 
-    if (root->children.size() == 2) {
-        child2 = root->children.at(1);
-    }
+//     if (root->children.size() == 2) {
+//         child2 = root->children.at(1);
+//     }
 
-    if (child1->node_type == AST_NODE_TYPE::ARITHMETIC_EXPR_NODE) {
-        clean_arithmetic_expr_tree_helper(dynamic_cast<ASTArithmeticExprNode*>(child1));
-    }
+//     if (child1->node_type == AST_NODE_TYPE::ARITHMETIC_EXPR_NODE) {
+//         clean_arithmetic_expr_tree_helper(dynamic_cast<ASTArithmeticExprNode*>(child1));
+//     }
 
-    if (root->children.size() == 2 && child2->node_type == AST_NODE_TYPE::ARITHMETIC_EXPR_NODE) {
-        clean_arithmetic_expr_tree_helper(dynamic_cast<ASTArithmeticExprNode*>(child2));
-    }
+//     if (root->children.size() == 2 && child2->node_type == AST_NODE_TYPE::ARITHMETIC_EXPR_NODE) {
+//         clean_arithmetic_expr_tree_helper(dynamic_cast<ASTArithmeticExprNode*>(child2));
+//     }
 
-    // Propagate single children up
-    if (root->children.size() == 1) {
-        ASTNode* parent = root->parent;
-        // Add child to parent's children, then delete current node
-        parent->children.push_back(root->children.at(0));
-        root->children.at(0)->parent = parent;
+//     // Propagate single children up
+//     if (root->children.size() == 1) {
+//         ASTNode* parent = root->parent;
+//         // Add child to parent's children, then delete current node
+//         parent->children.push_back(root->children.at(0));
+//         root->children.at(0)->parent = parent;
 
-        it = parent->children.begin();
+//         it = parent->children.begin();
         
-        // Remove current node's entry from parent's children list
-        while (it != parent->children.end()) {
-            if (*it == root) {
-                it = parent->children.erase(it, it + 1);
-                delete root;
-                break;
-            } else {
-                it++;
-            }
-        }
+//         // Remove current node's entry from parent's children list
+//         while (it != parent->children.end()) {
+//             if (*it == root) {
+//                 it = parent->children.erase(it, it + 1);
+//                 delete root;
+//                 break;
+//             } else {
+//                 it++;
+//             }
+//         }
 
-        // Repeat for parent if it is also a arithmetic expression tree
-        if (parent->node_type == AST_NODE_TYPE::ARITHMETIC_EXPR_NODE) {
-            ASTArithmeticExprNode* parent2 = dynamic_cast<ASTArithmeticExprNode*>(parent);
+//         // Repeat for parent if it is also a arithmetic expression tree
+//         if (parent->node_type == AST_NODE_TYPE::ARITHMETIC_EXPR_NODE) {
+//             ASTArithmeticExprNode* parent2 = dynamic_cast<ASTArithmeticExprNode*>(parent);
 
-            // Propagate operation when parent doesn't have one
-            if (parent2->op == "" && root->op != "") {
-                parent2->op = root->op;
-            }
+//             // Propagate operation when parent doesn't have one
+//             if (parent2->op == "" && root->op != "") {
+//                 parent2->op = root->op;
+//             }
 
-            clean_arithmetic_expr_tree_helper(parent2);
-        }
-    }
+//             clean_arithmetic_expr_tree_helper(parent2);
+//         }
+//     }
 
+// }
+
+// void AST::clean_arithmetic_expr_tree(ID::ASTNodeId root) {
+//     if (node_arena.get(root).node_type == AST_NODE_TYPE::ARITHMETIC_EXPR_NODE) {
+//         clean_arithmetic_expr_tree_helper(root);
+//     } else {
+//         for (ID::ASTNodeId child : node_arena.get(root).children) {
+//             clean_arithmetic_expr_tree(child);
+//         }
+//     }
+//}
+
+std::unique_ptr<ASTNode>& AST::get_node(ID::ASTNodeId id) {
+    return node_arena.get(id);
 }
 
-void AST::clean_arithmetic_expr_tree(ASTNodeId root) {
-    if (node_arena.get(root).node_type == AST_NODE_TYPE::ARITHMETIC_EXPR_NODE) {
-        clean_arithmetic_expr_tree_helper(root);
-    } else {
-        for (ASTNodeId child : node_arena.get(root).children) {
-            clean_arithmetic_expr_tree(child);
-        }
-    }
+SymbolTable& AST::get_symbol_table() {
+    return symbol_table;
 }
 
-void AST::construct_AST_helper(ASTNodeId root) {
-    for (ASTNodeId child : node_arena.get(root)->children) {
+const SymbolTable& AST::get_symbol_table() const {
+    return symbol_table;
+}
+
+void AST::construct_AST_helper(ID::ASTNodeId root) {
+    for (ID::ASTNodeId child : node_arena.get(root)->children) {
         construct_AST_helper(child);
     }
 
-    if (node_arena.get(root)->node_type == AST_NODE_TYPE::FUNCTION_NODE) {
-        for (ASTNodeId child : node_arena.get(root)->children) {
-            if (node_arena.get(child)->node_type == AST_NODE_TYPE::IDENT_NODE) {
-                node_arena.get(root)->function_name = dynamic_cast<ASTIdentNode*>(node_arena.get(child))->identifier;
-            }
-        }
-    } else if (root->node_type == AST_NODE_TYPE::TYPE_NODE) {
-        ASTTypeNode* type_node = dynamic_cast<ASTTypeNode*>(root);
-        ASTTempNode* temp = dynamic_cast<ASTTempNode*>(type_node->children.at(0));
-
-        type_node->type_name = temp->data;
-    } else if (root->node_type == AST_NODE_TYPE::ARITHMETIC_EXPR_NODE) {
-        ASTArithmeticExprNode* expr_node = dynamic_cast<ASTArithmeticExprNode*>(root);
-
-        for (ASTNode* child : root->children) {
-            if (child->node_type == AST_NODE_TYPE::TEMP_NODE) {
-                expr_node->op = dynamic_cast<ASTTempNode*>(child)->data;
-            }
-        }
-    }
-
-    auto it = root->children.begin();
-
-    while (it != root->children.end()) {
-        ASTNode* cur = *it;
-
-        if (cur->node_type == AST_NODE_TYPE::TEMP_NODE || cur->node_type == AST_NODE_TYPE::TYPE_NODE || cur->node_type == AST_NODE_TYPE::IDENT_NODE) {
-            it = root->children.erase(it, it + 1);
-            delete cur;
-        } else {
-            it++;
-        }
-
-    }
+    node_arena.get(root)->visit(ast_builder);
 }
 
 void AST::construct_AST_from_parse_tree() {
     construct_AST_helper(root);
-    clean_arithmetic_expr_tree(root);
 }
 
-void AST::construct_leaf_node(Token& token, SymbolId symbol, stack<ASTNodeId>& ast_stack) {
+void AST::construct_leaf_node(Token& token, SymbolId symbol, stack<ID::ASTNodeId>& ast_stack) {
     switch (grammar.symbol_arena.get(symbol).corresponding_token) {
         case TOKEN_TYPE::INT_CONST:
             ast_stack.push(node_arena.add(std::make_unique<ASTIntConstNode>(std::stoi(token.value))));
@@ -146,11 +124,11 @@ void AST::construct_leaf_node(Token& token, SymbolId symbol, stack<ASTNodeId>& a
     }
 }
 
-void AST::construct_production_node(int production_index, stack<ASTNodeId>& ast_stack) {
+void AST::construct_production_node(int production_index, stack<ID::ASTNodeId>& ast_stack) {
     Rule rule = grammar.productions.at(production_index);
     string production_symbol =  grammar.symbol_arena.get(rule.symbol).symbol;
 
-    ASTNodeId parent_node;
+    ID::ASTNodeId parent_node;
 
     if (production_symbol == "<root>") {
         parent_node = node_arena.add(std::make_unique<ASTRootNode>());
@@ -161,7 +139,7 @@ void AST::construct_production_node(int production_index, stack<ASTNodeId>& ast_
     } else if (production_symbol == "<type>") {
         parent_node = node_arena.add(std::make_unique<ASTTypeNode>());
     } else if (production_symbol == "<arithmeticexpr>" || production_symbol == "<arithmeticexprsuffix>") {
-        parent_node = node_arena.add(std::make_unique<ASTArithmeticExprNode>());
+        parent_node = node_arena.add(std::make_unique<ASTBinaryOpNode>());
     }
     
     for (int i = 0; i < rule.production_rule.size(); i++) {
@@ -169,7 +147,7 @@ void AST::construct_production_node(int production_index, stack<ASTNodeId>& ast_
             continue;
         }
 
-        ASTNodeId child = ast_stack.top();
+        ID::ASTNodeId child = ast_stack.top();
         node_arena.get(child)->parent = parent_node;
 
         node_arena.get(parent_node)->children.push_back(child);
@@ -180,7 +158,7 @@ void AST::construct_production_node(int production_index, stack<ASTNodeId>& ast_
 }
 
 void AST::construct_parse_tree(const vector<Token>& token_stream) {
-    stack<ASTNodeId> ast_stack;
+    stack<ID::ASTNodeId> ast_stack;
     stack<std::variant<SymbolId, int>> symbol_stack;
 
     int i = 0;
