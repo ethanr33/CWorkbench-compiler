@@ -3,6 +3,7 @@
 <type> ::= "INT"
 <return> ::= "RETURN" <returnval> ";"
 <literal> ::= "INT_CONST"
+<binaryoptype> ::= "+"
 <returnval> ::= <literal> <binaryop>
-<binaryop> ::= "+" <binaryopsuffix> | "ε"
+<binaryop> ::= <binaryoptype> <binaryopsuffix> | "ε"
 <binaryopsuffix> ::= <literal> <binaryop>

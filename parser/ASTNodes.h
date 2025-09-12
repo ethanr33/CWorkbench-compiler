@@ -24,6 +24,7 @@ enum class AST_NODE_TYPE {
 class NodeVisitor;
 
 enum class BINARY_OP {
+    INVALID,
     ADDITION
 };
 
@@ -44,7 +45,7 @@ struct ASTNode {
 struct ASTBinaryOpNode : ASTNode {
     BINARY_OP op;
 
-    ASTBinaryOpNode() : ASTNode(AST_NODE_TYPE::BINARY_OP_NODE) {}
+    ASTBinaryOpNode() : ASTNode(AST_NODE_TYPE::BINARY_OP_NODE), op(BINARY_OP::INVALID) {}
 
     void visit(NodeVisitor& visitor) override;
 

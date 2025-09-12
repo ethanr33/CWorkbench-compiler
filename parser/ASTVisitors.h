@@ -6,6 +6,8 @@
 class AST;
 
 class NodeVisitor {
+    protected:
+        vector<ID::ASTNodeId>& get_node_siblings(ASTNode&);
     public:
         virtual void visit(ASTRootNode&) = 0;
         virtual void visit(ASTFunctionNode&) = 0;

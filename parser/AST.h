@@ -48,7 +48,9 @@ class AST {
     public:
         AST(SymbolTable& table, CFG& grammar) : root(Arena<std::unique_ptr<ASTNode>>::invalid_id), symbol_table(table), grammar(grammar) {}
 
-        std::unique_ptr<ASTNode>& get_node(ID::ASTNodeId id); 
+        std::unique_ptr<ASTNode>& get_node(ID::ASTNodeId);
+
+        ID::ASTNodeId get_root_id();
 
         SymbolTable& get_symbol_table();
         const SymbolTable& get_symbol_table() const;

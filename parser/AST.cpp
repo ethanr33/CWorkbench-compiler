@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <variant>
+#include <algorithm>
 
 #include "AST.h"
 
@@ -11,80 +12,9 @@ using std::get_if;
 using std::get;
 using std::runtime_error;
 
-// void clean_arithmetic_expr_tree_helper(ID::ASTNodeId root) {
-//     auto it = root->children.begin();
-
-//     while (it != root->children.end()) {
-//         ASTNode* child = *it;
-
-//         // Remove empty arithmetic expr nodes
-//         if (child->node_type == AST_NODE_TYPE::ARITHMETIC_EXPR_NODE && child->children.size() == 0) {
-//             it = root->children.erase(it, it + 1);
-//             delete child;
-//         } else {
-//             it++;
-//         }
-//     }
-
-//     ASTNode* child1 = root->children.at(0);
-//     ASTNode* child2;
-
-//     if (root->children.size() == 2) {
-//         child2 = root->children.at(1);
-//     }
-
-//     if (child1->node_type == AST_NODE_TYPE::ARITHMETIC_EXPR_NODE) {
-//         clean_arithmetic_expr_tree_helper(dynamic_cast<ASTArithmeticExprNode*>(child1));
-//     }
-
-//     if (root->children.size() == 2 && child2->node_type == AST_NODE_TYPE::ARITHMETIC_EXPR_NODE) {
-//         clean_arithmetic_expr_tree_helper(dynamic_cast<ASTArithmeticExprNode*>(child2));
-//     }
-
-//     // Propagate single children up
-//     if (root->children.size() == 1) {
-//         ASTNode* parent = root->parent;
-//         // Add child to parent's children, then delete current node
-//         parent->children.push_back(root->children.at(0));
-//         root->children.at(0)->parent = parent;
-
-//         it = parent->children.begin();
-        
-//         // Remove current node's entry from parent's children list
-//         while (it != parent->children.end()) {
-//             if (*it == root) {
-//                 it = parent->children.erase(it, it + 1);
-//                 delete root;
-//                 break;
-//             } else {
-//                 it++;
-//             }
-//         }
-
-//         // Repeat for parent if it is also a arithmetic expression tree
-//         if (parent->node_type == AST_NODE_TYPE::ARITHMETIC_EXPR_NODE) {
-//             ASTArithmeticExprNode* parent2 = dynamic_cast<ASTArithmeticExprNode*>(parent);
-
-//             // Propagate operation when parent doesn't have one
-//             if (parent2->op == "" && root->op != "") {
-//                 parent2->op = root->op;
-//             }
-
-//             clean_arithmetic_expr_tree_helper(parent2);
-//         }
-//     }
-
-// }
-
-// void AST::clean_arithmetic_expr_tree(ID::ASTNodeId root) {
-//     if (node_arena.get(root).node_type == AST_NODE_TYPE::ARITHMETIC_EXPR_NODE) {
-//         clean_arithmetic_expr_tree_helper(root);
-//     } else {
-//         for (ID::ASTNodeId child : node_arena.get(root).children) {
-//             clean_arithmetic_expr_tree(child);
-//         }
-//     }
-//}
+ID::ASTNodeId AST::get_root_id() {
+    return root;
+}
 
 std::unique_ptr<ASTNode>& AST::get_node(ID::ASTNodeId id) {
     return node_arena.get(id);
@@ -115,12 +45,12 @@ void AST::print_AST() {
     print_AST_helper(root, 0);
 }
 
-void AST::construct_AST_helper(ID::ASTNodeId root) {
-    for (ID::ASTNodeId child : node_arena.get(root)->children) {
+void AST::construct_AST_helper(ID::ASTNodeId node) {
+    for (ID::ASTNodeId child : node_arena.get(node)->children) {
         construct_AST_helper(child);
     }
 
-    node_arena.get(root)->visit(ast_builder);
+    node_arena.get(node)->visit(ast_builder);
 }
 
 void AST::construct_AST_from_parse_tree() {
@@ -155,7 +85,7 @@ bool AST::construct_production_node(int production_index, stack<ID::ASTNodeId>& 
         parent_node = node_arena.add(std::make_unique<ASTReturnNode>());
     } else if (production_symbol == "<type>") {
         parent_node = node_arena.add(std::make_unique<ASTTypeNode>());
-    } else if (production_symbol == "<binaryop>") {
+    } else if (production_symbol == "<binaryop>" || production_symbol == "<binaryopsuffix>") {
         parent_node = node_arena.add(std::make_unique<ASTBinaryOpNode>());
     }
 
@@ -174,6 +104,10 @@ bool AST::construct_production_node(int production_index, stack<ID::ASTNodeId>& 
         node_arena.get(parent_node)->children.push_back(child);
         ast_stack.pop();
     }
+
+    // Tokens are popped off in reverse order from the stack,
+    // So reverse the children array to maintain the original ordering
+    std::reverse(node_arena.get(parent_node)->children.begin(), node_arena.get(parent_node)->children.end());
 
     ast_stack.push(parent_node);
     

@@ -20,8 +20,15 @@ class SymbolTable {
         std::unordered_map<ID::ASTNodeId, ID::SymbolTableId> node_id_to_entry;
     public:
 
+        static constexpr ID::SymbolTableId SymbolTable::invalid_entry = -1;
+
         ID::SymbolTableId add(ID::ASTNodeId, const std::string& string);
 
         SymbolTableEntry& get(ID::SymbolTableId);
         const SymbolTableEntry& get(ID::SymbolTableId) const;
+
+        SymbolTableEntry& get(ID::ASTNodeId);
+        const SymbolTableEntry& get(ID::ASTNodeId) const;
+
+        ID::SymbolTableId get_node_entry(ID::ASTNodeId) const;
 };
