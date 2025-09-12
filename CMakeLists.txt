@@ -27,7 +27,7 @@ set(SOURCES
     lexer/Token.cpp
     parser/CFG.cpp
     parser/AST.cpp
-    parser/ASTBuilders.cpp
+    parser/ASTVisitors.cpp
     parser/ASTNodes.cpp
     parser/Parser.cpp
     codegen/AssemblyGenerator.cpp

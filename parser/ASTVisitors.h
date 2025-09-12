@@ -37,6 +37,8 @@ class ParameterizedNodeVisitor {
 class ASTBuilderVisitor : public NodeVisitor {
     private:
         AST& ast;
+
+        void erase_children(ASTNode&, AST_NODE_TYPE);
     public:
         ASTBuilderVisitor(AST& ast) : ast(ast) {}
 
@@ -50,4 +52,22 @@ class ASTBuilderVisitor : public NodeVisitor {
         void visit(ASTIntConstNode&) override;
 
         ~ASTBuilderVisitor() = default;
+};
+
+class ASTPrinterVisitor : public NodeVisitor {
+    private:
+        AST& ast;
+    public:
+        ASTPrinterVisitor(AST& ast) : ast(ast) {}
+
+        void visit(ASTRootNode&) override;
+        void visit(ASTFunctionNode&) override;
+        void visit(ASTReturnNode&) override;
+        void visit(ASTTypeNode&) override;
+        void visit(ASTBinaryOpNode&) override;
+        void visit(ASTTempNode&) override;
+        void visit(ASTIdentNode&) override;
+        void visit(ASTIntConstNode&) override;
+
+        ~ASTPrinterVisitor() = default;
 };

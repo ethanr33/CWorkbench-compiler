@@ -9,7 +9,7 @@
 #include "../codegen/SymbolTable.h"
 #include "CFG.h"
 #include "ASTNodes.h"
-#include "ASTBuilders.h"
+#include "ASTVisitors.h"
 
 using std::string;
 using std::stack;
@@ -35,7 +35,15 @@ class AST {
         ID::ASTNodeId root;
 
         Arena<std::unique_ptr<ASTNode>> node_arena;
+
         ASTBuilderVisitor ast_builder = ASTBuilderVisitor{*this};
+        ASTPrinterVisitor ast_printer = ASTPrinterVisitor{*this};
+
+        bool construct_production_node(int, stack<ID::ASTNodeId>&);
+        void construct_leaf_node(Token&, SymbolId, stack<ID::ASTNodeId>&);
+
+        void construct_AST_helper(ID::ASTNodeId);
+        void print_AST_helper(ID::ASTNodeId, int level);
 
     public:
         AST(SymbolTable& table, CFG& grammar) : root(Arena<std::unique_ptr<ASTNode>>::invalid_id), symbol_table(table), grammar(grammar) {}
@@ -47,10 +55,9 @@ class AST {
 
         void construct_parse_tree(const vector<Token>&);
         void construct_AST_from_parse_tree();
-        void construct_production_node(int, stack<ID::ASTNodeId>&);
-        void construct_leaf_node(Token&, SymbolId, stack<ID::ASTNodeId>&);
 
-        void construct_AST_helper(ID::ASTNodeId);
+        void print_AST();
+
 };
 
 

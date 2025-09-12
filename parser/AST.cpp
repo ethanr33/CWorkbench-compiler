@@ -98,6 +98,23 @@ const SymbolTable& AST::get_symbol_table() const {
     return symbol_table;
 }
 
+void AST::print_AST_helper(ID::ASTNodeId node, int level) {
+    
+    for (int i = 0; i < level; i++) {
+        std::cout << "  ";
+    }
+
+    node_arena.get(node)->visit(ast_printer);
+
+    for (ID::ASTNodeId child : node_arena.get(node)->children) {
+        print_AST_helper(child, level + 1);
+    }
+}
+
+void AST::print_AST() {
+    print_AST_helper(root, 0);
+}
+
 void AST::construct_AST_helper(ID::ASTNodeId root) {
     for (ID::ASTNodeId child : node_arena.get(root)->children) {
         construct_AST_helper(child);
@@ -124,11 +141,11 @@ void AST::construct_leaf_node(Token& token, SymbolId symbol, stack<ID::ASTNodeId
     }
 }
 
-void AST::construct_production_node(int production_index, stack<ID::ASTNodeId>& ast_stack) {
+bool AST::construct_production_node(int production_index, stack<ID::ASTNodeId>& ast_stack) {
     Rule rule = grammar.productions.at(production_index);
     string production_symbol =  grammar.symbol_arena.get(rule.symbol).symbol;
 
-    ID::ASTNodeId parent_node;
+    ID::ASTNodeId parent_node = Arena<ID::ASTNodeId>::invalid_id;
 
     if (production_symbol == "<root>") {
         parent_node = node_arena.add(std::make_unique<ASTRootNode>());
@@ -138,9 +155,13 @@ void AST::construct_production_node(int production_index, stack<ID::ASTNodeId>& 
         parent_node = node_arena.add(std::make_unique<ASTReturnNode>());
     } else if (production_symbol == "<type>") {
         parent_node = node_arena.add(std::make_unique<ASTTypeNode>());
-    } else if (production_symbol == "<arithmeticexpr>" || production_symbol == "<arithmeticexprsuffix>") {
+    } else if (production_symbol == "<binaryop>") {
         parent_node = node_arena.add(std::make_unique<ASTBinaryOpNode>());
     }
+
+    if (parent_node == Arena<ID::ASTNodeId>::invalid_id) {
+        return false;
+    } 
     
     for (int i = 0; i < rule.production_rule.size(); i++) {
         if (rule.production_rule.at(i) == grammar.symbols.at("ε")) {
@@ -155,6 +176,8 @@ void AST::construct_production_node(int production_index, stack<ID::ASTNodeId>& 
     }
 
     ast_stack.push(parent_node);
+    
+    return true;
 }
 
 void AST::construct_parse_tree(const vector<Token>& token_stream) {
@@ -229,7 +252,8 @@ void AST::construct_parse_tree(const vector<Token>& token_stream) {
             }
         } else {
             // Pop from AST stack and push a new AST node based on the rule
-            construct_production_node(get<int>(symbol_stack.top()), ast_stack);
+            bool added = construct_production_node(get<int>(symbol_stack.top()), ast_stack);
+
             symbol_stack.pop();
         }
 
