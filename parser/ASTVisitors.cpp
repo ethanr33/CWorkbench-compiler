@@ -1,5 +1,6 @@
 
 #include <iostream>
+#include <cassert>
 
 #include "ASTVisitors.h"
 #include "../codegen/SymbolTable.h"
@@ -63,6 +64,8 @@ void ASTBuilderVisitor::visit(ASTReturnNode& node) {
 
         ast.get_node(binop_id)->children.push_back(intconst_id);
         node.children.erase(intconst_iter, intconst_iter + 1);
+
+        ast.get_node(intconst_id)->parent = binop_id;
     }
 
     for (auto it = node.children.begin(); it != node.children.end();) {
@@ -112,6 +115,12 @@ void ASTBuilderVisitor::visit(ASTBinaryOpNode& node) {
             } else {
                 it++;
             }
+        }
+    }
+
+    if (node.children.size() == 2) {
+        if (ast.get_node(node.children.at(0))->node_type == AST_NODE_TYPE::INT_CONST_NODE && ast.get_node(node.children.at(1))->node_type == AST_NODE_TYPE::BINARY_OP_NODE) {
+            std::swap(node.children.at(0), node.children.at(1));
         }
     }
 }

@@ -31,6 +31,7 @@ set(SOURCES
     parser/ASTNodes.cpp
     parser/Parser.cpp
     codegen/AssemblyGenerator.cpp
+    codegen/AssemblyBuilder.cpp
 )
 
 set(SOURCES_TEST

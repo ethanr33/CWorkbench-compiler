@@ -19,11 +19,17 @@ done
 cd build
 
 if ! (($build_debug)); then
-  echo $#
   cmake ..
+
+  if ! (($? == 0)); then
+    exit 1
+  fi
 else 
-  echo "here 2"
   cmake .. -DCMAKE_BUILD_TYPE=Debug
+
+  if ! (($? == 0)); then
+    exit 1
+  fi
 fi
 
 make

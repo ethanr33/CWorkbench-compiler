@@ -1,17 +1,31 @@
 
-#include "ASTVisitors.h"
+#include "../parser/ASTVisitors.h"
 
-class AssemblyBuilder : NodeVisitor {
+
+class AssemblyBuilder : public NodeVisitor {
     private:
-        string generated_assembly;
+        string generated_assembly_prolog;
+        string generated_assembly_body;
+        string generated_assembly_epilog;
+
         AST& ast;
         SymbolTable& symbol_table;
 
         bool has_valid_entry_point() const;
+        void clear_generated_assembly();
+
+        std::unordered_map<string, bool> used_registers = {
+            {"r12", false},
+            {"r13", false}
+        };
         
     public:
 
         AssemblyBuilder(AST& ast, SymbolTable& table) : ast(ast), symbol_table(table) {}
+
+        const string& get_prolog() const;
+        const string& get_body() const;
+        const string& get_epilog() const;
 
         void visit(ASTRootNode&) override;
         void visit(ASTFunctionNode&) override;
