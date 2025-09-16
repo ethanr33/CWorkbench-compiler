@@ -66,8 +66,6 @@ void AssemblyBuilder::visit(ASTTypeNode& node) {
 void AssemblyBuilder::visit(ASTBinaryOpNode& node) {
     clear_generated_assembly();
 
-    assert(!used_registers.at("r12"));
-
     generated_assembly_epilog += "add rdi, r12\n";
 
     if (used_registers.at("r13")) {
@@ -95,8 +93,6 @@ void AssemblyBuilder::visit(ASTIntConstNode& node) {
             generated_assembly_body += std::format("mov rdi, {:d}\n", node.value);
             break;
         case AST_NODE_TYPE::BINARY_OP_NODE:
-            assert(used_registers.at("r12") && used_registers.at("r13"));
-
             if (!used_registers.at("r12")) {
                 generated_assembly_body += std::format("mov r12, {:d}\n", node.value);
                 used_registers.at("r12") = true;

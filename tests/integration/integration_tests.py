@@ -27,8 +27,10 @@ def test_basic_tests():
 
         for file_name in answer_key:
             file_path = CURRENT_DIR.relative_to(ROOT_DIR) / BASIC_TESTS_ROOT_DIR / file_name
+            print("Running test file ", file_name)
             if not answer_key[file_name]["error"]:
                 proc = subprocess.run([str(RUN_SCRIPT), file_path], capture_output=True)
+                print("Running test file ", file_name)
                 assert proc.returncode == answer_key[file_name]["returncode"]
                 assert not check_for_error(proc.stdout)
             else:
@@ -42,6 +44,7 @@ def test_arithmetic_expr_tests():
         answer_key = json.loads(content)
 
         for file_name in answer_key:
+            print("Running test file ", file_name)
             file_path = CURRENT_DIR.relative_to(ROOT_DIR) / ARITHMETIC_EXPR_TESTS_ROOT_DIR / file_name
             if not answer_key[file_name]["error"]:
                 proc = subprocess.run([str(RUN_SCRIPT), file_path], capture_output=True)
