@@ -30,6 +30,7 @@ const std::unordered_map<std::string, TOKEN_TYPE> TERMINAL_MAP = {
     {"(",         TOKEN_TYPE::O_PAREN},
     {")",         TOKEN_TYPE::C_PAREN},
     {";",         TOKEN_TYPE::SEMICOLON},
+    {"=",         TOKEN_TYPE::EQUALS},
     {"$",         TOKEN_TYPE::END_OF_INPUT},
     {"ε",         TOKEN_TYPE::EPSILON},
     {"+",         TOKEN_TYPE::PLUS}

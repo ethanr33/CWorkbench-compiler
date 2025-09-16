@@ -18,7 +18,8 @@ enum class AST_NODE_TYPE {
     IDENT_NODE,
     BINARY_OP_NODE,
     INT_CONST_NODE,
-    TEMP_NODE
+    TEMP_NODE,
+    TEMP_PARENT_NODE,
 };
 
 class NodeVisitor;
@@ -59,6 +60,13 @@ struct ASTTempNode : ASTNode {
     string data;
     TOKEN_TYPE corresponding_token;
     ASTTempNode(string data, TOKEN_TYPE corresponding_token) : ASTNode(AST_NODE_TYPE::TEMP_NODE), corresponding_token(corresponding_token), data(data) {}
+    void visit(NodeVisitor& visitor) override;
+};
+
+struct ASTTempParentNode : ASTNode {
+    SymbolId corresponding_rule;
+
+    ASTTempNode(SymbolId corresponding_rule) : ASTNode(AST_NODE_TYPE::TEMP_PARENT_NODE), corresponding_rule(corresponding_rule), data(data) {}
     void visit(NodeVisitor& visitor) override;
 };
 

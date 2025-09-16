@@ -85,8 +85,10 @@ bool AST::construct_production_node(int production_index, stack<ID::ASTNodeId>& 
         parent_node = node_arena.add(std::make_unique<ASTReturnNode>());
     } else if (production_symbol == "<type>") {
         parent_node = node_arena.add(std::make_unique<ASTTypeNode>());
-    } else if (production_symbol == "<binaryop>" || production_symbol == "<binaryopsuffix>") {
+    } else if (production_symbol == "<binaryop>") {
         parent_node = node_arena.add(std::make_unique<ASTBinaryOpNode>());
+    } else if (production_symbol == "<expression>") {
+        parent_node = node_arena.add(std::make_unique<ASTTempNode>("<expression>", TOKEN_TYPE::NON_TOKEN));
     }
 
     if (parent_node == Arena<ID::ASTNodeId>::invalid_id) {
