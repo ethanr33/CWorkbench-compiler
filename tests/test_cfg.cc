@@ -1,5 +1,6 @@
 
 #include <gtest/gtest.h>
+#include <utility>
 
 #include "../parser/CFG.h"
 
@@ -19,13 +20,13 @@ TEST_F(CFGTest, ParseTableGenerationWorks) {
     cfg.construct_FOLLOW_sets();
     cfg.construct_parse_table();
 
-    Symbol* root_nonterminal = cfg.symbols.at("<root>");
-    Symbol* func_nonterminal = cfg.symbols.at("<function>");
-    Symbol* type_nonterminal = cfg.symbols.at("<type>");
-    Symbol* return_nonterminal = cfg.symbols.at("<return>");
+    SymbolId root_nonterminal = cfg.symbols.at("<root>");
+    SymbolId func_nonterminal = cfg.symbols.at("<function>");
+    SymbolId type_nonterminal = cfg.symbols.at("<type>");
+    SymbolId return_nonterminal = cfg.symbols.at("<return>");
 
-    Symbol* int_kw = cfg.symbols.at("INT");
-    Symbol* return_kw = cfg.symbols.at("RETURN");
+    SymbolId int_kw = cfg.symbols.at("INT");
+    SymbolId return_kw = cfg.symbols.at("RETURN");
 
     if (cfg.parse_table.find(root_nonterminal) == cfg.parse_table.end()) {
         FAIL() << "Could not find any <root> entry in parse table";
@@ -74,12 +75,12 @@ TEST_F(CFGTest, TokenToSymbolWorks) {
     // The last token is always a NON_TOKEN, which is not a real token so we don't test for it
     for (int i = 0; i < NUM_TOKENS - 1; i++) {
         Token token((TOKEN_TYPE) i, "");
-        Symbol* symbol = cfg.token_to_symbol(token);
+        SymbolId symbol = cfg.token_to_symbol(token);
 
         bool symbol_exists = false;
 
         for (const auto& [symbol_string, symbol] : cfg.symbols) {
-            if (symbol->corresponding_token == (TOKEN_TYPE) i) {
+            if (cfg.symbol_arena.get(symbol).corresponding_token == (TOKEN_TYPE) i) {
                 symbol_exists = true;
             }   
         }
@@ -88,11 +89,11 @@ TEST_F(CFGTest, TokenToSymbolWorks) {
             continue;
         }
 
-        if (symbol == nullptr) {
-            FAIL() << "token_to_symbol returned nullptr for token " << i;
+        if (symbol == Arena<Symbol>::invalid_id) {
+            FAIL() << "token_to_symbol did not find anything for token " << i;
         }
 
-        EXPECT_EQ(token.token_type, symbol->corresponding_token) << "Failed to find matching symbol for token " << i;
+        EXPECT_EQ(token.token_type, cfg.symbol_arena.get(symbol).corresponding_token) << "Failed to find matching symbol for token " << i;
     }
 
 }
@@ -100,21 +101,21 @@ TEST_F(CFGTest, TokenToSymbolWorks) {
 TEST_F(CFGTest, TokenToSymbolReturnsNull) {
 
     Token token(TOKEN_TYPE::NON_TOKEN, "invalid");
-    Symbol* symbol = cfg.token_to_symbol(token);
+    SymbolId symbol = cfg.token_to_symbol(token);
 
-    EXPECT_EQ(symbol, nullptr) << "Expected token_to_symbol to not find NON_TOKEN, found " << symbol->corresponding_token;
+    EXPECT_EQ(symbol, Arena<Symbol>::invalid_id) << "Expected token_to_symbol to not find NON_TOKEN, found " << cfg.symbol_arena.get(symbol).corresponding_token;
 
 }
 
 TEST_F(CFGTest, TokenToSymbolIgnoresTokenString) {
 
     Token token1(TOKEN_TYPE::IDENTIFIER, "a");
-    Symbol* symbol1 = cfg.token_to_symbol(token1);
+    SymbolId symbol1 = cfg.token_to_symbol(token1);
 
     Token token2(TOKEN_TYPE::IDENTIFIER, "otherident");
-    Symbol* symbol2 = cfg.token_to_symbol(token2);
+    SymbolId symbol2 = cfg.token_to_symbol(token2);
 
-    EXPECT_EQ(token1.token_type, symbol1->corresponding_token) << "Expected token_to_symbol to find identifier with string value a, found " << symbol1->corresponding_token;
-    EXPECT_EQ(token2.token_type, symbol2->corresponding_token) << "Expected token_to_symbol to find identifier with string value a, found " << symbol2->corresponding_token;
+    EXPECT_EQ(token1.token_type, cfg.symbol_arena.get(symbol1).corresponding_token) << "Expected token_to_symbol to find identifier with string value a, found " << cfg.symbol_arena.get(symbol1).corresponding_token;
+    EXPECT_EQ(token2.token_type, cfg.symbol_arena.get(symbol2).corresponding_token) << "Expected token_to_symbol to find identifier with string value a, found " << cfg.symbol_arena.get(symbol2).corresponding_token;
 
 }

@@ -1,6 +1,9 @@
 <root> ::= <function>
 <function> ::= <type> "IDENT" "(" ")" "{" <return> "}"
 <type> ::= "INT"
-<return> ::= "RETURN" <arithmeticexpr> ";"
-<arithmeticexpr> ::= "INT_CONST" <arithmeticexprsuffix>
-<arithmeticexprsuffix> ::= "+" <arithmeticexpr> | "ε"
+<return> ::= "RETURN" <returnval> ";"
+<literal> ::= "INT_CONST"
+<binaryoptype> ::= "+"
+<returnval> ::= <literal> <binaryop>
+<binaryop> ::= <binaryoptype> <binaryopsuffix> | "ε"
+<binaryopsuffix> ::= <literal> <binaryop>

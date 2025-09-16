@@ -1,14 +1,14 @@
 
 #include "CFG.h"
 #include "AST.h"
+#include "../codegen/SymbolTable.h"
 
 struct Parser {
     CFG grammar;
     AST ast;
+    SymbolTable& symbol_table;
 
-    // Given a file path containing grammar specifications for the language,
-    // generate the CFG object which represents it
-    void load_grammar(string);
+    Parser(SymbolTable& table, CFG& grammar) : grammar(grammar), symbol_table(table), ast(table, grammar) {}
     
     // Given a stream of tokens, generate an AST which represents it
     // Store it within the ast variable

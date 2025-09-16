@@ -8,11 +8,14 @@
 #include <memory>
 
 #include "../lexer/Lexer.h"
+#include "../tools/memory.h"
 
 using std::vector;
 using std::string;
 using std::unordered_set;
 using std::unordered_map;
+
+using SymbolId = uint32_t;
 
 const string SEPARATOR = "::=";
 
@@ -39,8 +42,8 @@ struct Symbol {
     string symbol; // String representation of the symbol
     bool is_terminal; // True if the symbol is a terminal symbol
 
-    unordered_set<Symbol*> FIRST; // The FIRST set of this symbol
-    unordered_set<Symbol*> FOLLOW; // The FOLLOW set of this symbol
+    unordered_set<SymbolId> FIRST; // The FIRST set of this symbol
+    unordered_set<SymbolId> FOLLOW; // The FOLLOW set of this symbol
 
     TOKEN_TYPE corresponding_token = TOKEN_TYPE::NON_TOKEN; // The corresponding token for this symbol, NON_TOKEN if the symbol is nonterminal
 
@@ -54,13 +57,13 @@ struct Symbol {
  * @brief Represents a rule in the grammar.
  */
 struct Rule {
-    Symbol* symbol; // The nonterminal symbol which produces this rule
-    vector<Symbol*> production_rule; // The symbols which make up this rule
+    SymbolId symbol; // The nonterminal symbol which produces this rule
+    vector<SymbolId> production_rule; // The symbols which make up this rule
     bool is_terminal; // True if this rule produces a single terminal symbol
 
-    Rule() : symbol(nullptr) {}
-    Rule(Symbol* symbol) : symbol(symbol) {}
-    Rule(Symbol* symbol, vector<Symbol*> production_rule, bool is_terminal) : symbol(symbol), production_rule(production_rule), is_terminal(is_terminal) {}
+    Rule() : symbol(Arena<Symbol>::invalid_id) {}
+    Rule(SymbolId symbol) : symbol(symbol) {}
+    Rule(SymbolId symbol, vector<SymbolId> production_rule, bool is_terminal) : symbol(symbol), production_rule(production_rule), is_terminal(is_terminal) {}
 
 };
 
@@ -70,7 +73,7 @@ struct Rule {
  */
 struct NonterminalRule : Rule {
 
-    NonterminalRule(Symbol* symbol, vector<Symbol*> rule) : Rule(symbol, rule, false) {
+    NonterminalRule(SymbolId symbol, vector<SymbolId> rule) : Rule(symbol, rule, false) {
         is_terminal = false;
     }
 
@@ -83,7 +86,7 @@ struct NonterminalRule : Rule {
 struct TerminalRule : Rule {
     TOKEN_TYPE terminal_symbol; // The token which is produces by this rule
 
-    TerminalRule(Symbol* symbol, TOKEN_TYPE terminal_symbol) : Rule(symbol, {}, true), terminal_symbol(terminal_symbol) {}
+    TerminalRule(SymbolId symbol, TOKEN_TYPE terminal_symbol) : Rule(symbol, {}, true), terminal_symbol(terminal_symbol) {}
 
 };
 
@@ -95,9 +98,11 @@ struct TerminalRule : Rule {
  */
 struct CFG {
 
-    unordered_map<string, Symbol*> symbols; // List of symbols for this grammar
+    Arena<Symbol> symbol_arena;
 
-    unordered_map<Symbol*, unordered_map<Symbol*, int>> parse_table; // The generated parse table
+    unordered_map<string, SymbolId> symbols; // List of symbols for this grammar
+
+    unordered_map<SymbolId, unordered_map<SymbolId, int>> parse_table; // The generated parse table
     
     vector<Rule> productions; // List of productions for this grammar
 
@@ -107,7 +112,7 @@ struct CFG {
     void load_data(const string&);
     void generate_terminal_rules();
 
-    Symbol* token_to_symbol(Token&) const;
+    SymbolId token_to_symbol(Token&) const;
     
     void construct_FIRST_sets();
     void construct_FOLLOW_sets();

@@ -22,12 +22,16 @@ set(MAIN
 
 set(SOURCES
     tools/debug.cpp
+    codegen/SymbolTable.cpp
     lexer/Lexer.cpp 
     lexer/Token.cpp
     parser/CFG.cpp
     parser/AST.cpp
+    parser/ASTVisitors.cpp
+    parser/ASTNodes.cpp
     parser/Parser.cpp
     codegen/AssemblyGenerator.cpp
+    codegen/AssemblyBuilder.cpp
 )
 
 set(SOURCES_TEST
@@ -35,7 +39,7 @@ set(SOURCES_TEST
     tests/test_cfg.cc
 )
 
-add_executable(compiler ${MAIN} ${SOURCES})
+add_executable(compiler ${SOURCES} ${MAIN})
 
 add_executable(tests ${SOURCES_TEST})
 target_link_libraries(tests gtest_main)
