@@ -66,11 +66,7 @@ void AssemblyBuilder::visit(ASTTypeNode& node) {
 void AssemblyBuilder::visit(ASTBinaryOpNode& node) {
     clear_generated_assembly();
 
-    if (!used_registers.at("r12")) {
-        assert("r12 register is not used");
-    }
-
-    
+    assert(!used_registers.at("r12"));
 
     generated_assembly_epilog += "add rdi, r12\n";
 
@@ -99,14 +95,14 @@ void AssemblyBuilder::visit(ASTIntConstNode& node) {
             generated_assembly_body += std::format("mov rdi, {:d}\n", node.value);
             break;
         case AST_NODE_TYPE::BINARY_OP_NODE:
+            assert(used_registers.at("r12") && used_registers.at("r13"));
+
             if (!used_registers.at("r12")) {
                 generated_assembly_body += std::format("mov r12, {:d}\n", node.value);
                 used_registers.at("r12") = true;
             } else if (!used_registers.at("r13")) {
                 generated_assembly_body += std::format("mov r13, {:d}\n", node.value);
                 used_registers.at("r13") = true;
-            } else {
-                assert("r12 and r13 registers are used at the same time");
             }
             break;
         default:

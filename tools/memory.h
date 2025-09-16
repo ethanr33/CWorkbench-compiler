@@ -28,7 +28,6 @@ class Arena : public AbstractArena<T> {
     private:
         std::vector<T> items;
     public:
-        static constexpr ID::DefaultId invalid_id = -1;
 
         ID::DefaultId add(T&& item) {
             items.push_back(std::move(item));

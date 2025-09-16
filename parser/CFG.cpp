@@ -292,7 +292,7 @@ void CFG::generate_terminal_rules() {
     SymbolId endofinput_sid = symbol_arena.add(Symbol("$", true, TOKEN_TYPE::END_OF_INPUT));
     symbols.insert({"$", endofinput_sid});
 
-    SymbolId epsilon_sid = symbol_arena.add(Symbol("ε", true, TOKEN_TYPE::END_OF_INPUT));
+    SymbolId epsilon_sid = symbol_arena.add(Symbol("ε", true, TOKEN_TYPE::EPSILON));
     symbols.insert({"ε", epsilon_sid});
 
     for (SymbolId id = 0; id < symbol_arena.get_max_id(); id++) {
