@@ -4,9 +4,9 @@
 <literal> ::= "INT_CONST"
 <binaryoptype> ::= "+" | "="
 <functionbody> ::= <statement> <functionbody> | "ε"
-<statement> ::= <return> | <variabledeclaration> | <expression> ";"
+<statement> ::= <return> | <variabledeclaration> ";" | <expression> ";"
 <return> ::= "RETURN" <expression> ";"
-<variabledeclaration> ::= <type> "IDENT" <variabledefinition> ";"
+<variabledeclaration> ::= <type> "IDENT" <variabledefinition>
 <variabledefinition> ::= "=" <expression> | "ε"
 <expression> ::= <literal> <binaryop> | "IDENT" <binaryop>
 <binaryop> ::= <binaryoptype> <expression> | "ε"

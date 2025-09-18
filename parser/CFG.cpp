@@ -329,6 +329,8 @@ void CFG::load_data(const string& file_path) {
         throw runtime_error("Failed to open CFG file");
     }
 
+    int line_num = 0;
+
     // Go line by line and add the rules for all non-terminal symbols
 
     string cur_line;
@@ -361,8 +363,11 @@ void CFG::load_data(const string& file_path) {
                 }
 
                 NonterminalRule new_rule(symbols.at(production_nonterminal), rule);
+                new_rule.line_num = line_num;
                 productions.push_back(new_rule);
                 rule.clear();
+
+                line_num++;
                 continue;
             }
 
@@ -382,8 +387,10 @@ void CFG::load_data(const string& file_path) {
         }
 
         NonterminalRule new_rule(symbols.at(production_nonterminal), rule);
+        new_rule.line_num = line_num;
 
         productions.push_back(new_rule);
+        line_num++;
     }
 
     generate_terminal_rules();

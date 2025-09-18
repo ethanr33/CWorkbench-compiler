@@ -45,6 +45,8 @@ class ASTBuilderVisitor : public NodeVisitor {
         AST& ast;
 
         void erase_children(ASTNode&, AST_NODE_TYPE);
+        void promote_children(ID::ASTNodeId);
+        void promote_children_by_type(AST_NODE_TYPE, ID::ASTNodeId);
     public:
         ASTBuilderVisitor(AST& ast) : ast(ast) {}
 

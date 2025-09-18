@@ -62,6 +62,8 @@ struct Rule {
     vector<SymbolId> production_rule; // The symbols which make up this rule
     bool is_terminal; // True if this rule produces a single terminal symbol
 
+    int line_num; // Line at which this rule is defined
+
     Rule() : symbol(Arena<Symbol>::invalid_id) {}
     Rule(SymbolId symbol) : symbol(symbol) {}
     Rule(SymbolId symbol, vector<SymbolId> production_rule, bool is_terminal) : symbol(symbol), production_rule(production_rule), is_terminal(is_terminal) {}

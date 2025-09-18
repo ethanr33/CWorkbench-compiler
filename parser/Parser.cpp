@@ -3,6 +3,9 @@
 
 void Parser::generate_AST(const vector<Token>& token_stream) {
     ast.construct_parse_tree(token_stream);
+    std::cout << "Before cleaning:" << std::endl;
+    ast.print_AST();
     ast.construct_AST_from_parse_tree();
+    std::cout << "After cleaning:" << std::endl;
     ast.print_AST();
 }
