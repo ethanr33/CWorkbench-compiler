@@ -18,6 +18,7 @@ enum class AST_NODE_TYPE {
     IDENT_NODE,
     BINARY_OP_NODE,
     INT_CONST_NODE,
+    VARIABLE_DECL_NODE,
     TEMP_NODE,
     TEMP_PARENT_NODE,
 };
@@ -26,16 +27,19 @@ class NodeVisitor;
 
 enum class BINARY_OP {
     INVALID,
-    ADDITION
+    ADDITION,
+    ASSIGNMENT
 };
 
 static const unordered_map<std::string, BINARY_OP> binary_op_map = {
-    {"+", BINARY_OP::ADDITION}
+    {"+", BINARY_OP::ADDITION},
+    {"=", BINARY_OP::ASSIGNMENT}
 };
 
 struct ASTNode {
     AST_NODE_TYPE node_type;
     vector<ID::ASTNodeId> children;
+    ID::ASTNodeId id;
     ID::ASTNodeId parent;
 
     virtual void visit(NodeVisitor&) = 0;
@@ -64,9 +68,9 @@ struct ASTTempNode : ASTNode {
 };
 
 struct ASTTempParentNode : ASTNode {
-    SymbolId corresponding_rule;
+    string symbol;
 
-    ASTTempNode(SymbolId corresponding_rule) : ASTNode(AST_NODE_TYPE::TEMP_PARENT_NODE), corresponding_rule(corresponding_rule), data(data) {}
+    ASTTempParentNode(string symbol) : ASTNode(AST_NODE_TYPE::TEMP_PARENT_NODE), symbol(symbol) {}
     void visit(NodeVisitor& visitor) override;
 };
 
@@ -77,6 +81,14 @@ struct ASTRootNode : ASTNode {
 
 struct ASTFunctionNode : ASTNode {
     ASTFunctionNode() : ASTNode(AST_NODE_TYPE::FUNCTION_NODE) {}
+    void visit(NodeVisitor& visitor) override;
+};
+
+struct ASTVariableDeclNode : ASTNode {
+    bool has_definition;
+
+    ASTVariableDeclNode() : ASTNode(AST_NODE_TYPE::VARIABLE_DECL_NODE) {}
+
     void visit(NodeVisitor& visitor) override;
 };
 

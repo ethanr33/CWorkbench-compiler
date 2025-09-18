@@ -33,3 +33,11 @@ void ASTBinaryOpNode::visit(NodeVisitor& visitor) {
 void ASTTempNode::visit(NodeVisitor& visitor) {
     visitor.visit(*this);
 }
+
+void ASTTempParentNode::visit(NodeVisitor& visitor) {
+    visitor.visit(*this);
+}
+
+void ASTVariableDeclNode::visit(NodeVisitor& visitor) {
+    visitor.visit(*this);
+}

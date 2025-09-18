@@ -106,3 +106,11 @@ void AssemblyBuilder::visit(ASTIntConstNode& node) {
             break;
     }
 }
+
+void AssemblyBuilder::visit(ASTTempParentNode& node) {
+
+}
+
+void AssemblyBuilder::visit(ASTVariableDeclNode& node) {
+    clear_generated_assembly();
+}

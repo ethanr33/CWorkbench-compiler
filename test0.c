@@ -1,3 +1,5 @@
 int main() {
-    return 1 + 2;
+    int x = 1;
+    int y = x + 2;
+    return x + y + z;
 }

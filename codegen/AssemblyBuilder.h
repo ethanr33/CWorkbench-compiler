@@ -35,6 +35,8 @@ class AssemblyBuilder : public NodeVisitor {
         void visit(ASTTempNode&) override;
         void visit(ASTIdentNode&) override;
         void visit(ASTIntConstNode&) override;
+        void visit(ASTTempParentNode&) override;
+        void visit(ASTVariableDeclNode&) override;
 
         void validate_AST() const;
 

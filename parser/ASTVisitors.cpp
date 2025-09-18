@@ -132,8 +132,10 @@ void ASTBuilderVisitor::visit(ASTTempNode& node) {
 void ASTBuilderVisitor::visit(ASTIdentNode& node) {
     switch (ast.get_node(node.parent)->node_type) {
         case AST_NODE_TYPE::FUNCTION_NODE:
-            ast.get_symbol_table().add(node.parent, node.identifier);
+            ast.get_symbol_table().add_function(node.parent, node.identifier);
             break;
+        case AST_NODE_TYPE::VARIABLE_DECL_NODE:
+            ast.get_symbol_table().add_variable(node.parent, node.identifier);
         default:
             break;
     }
@@ -143,6 +145,54 @@ void ASTBuilderVisitor::visit(ASTIdentNode& node) {
 
 void ASTBuilderVisitor::visit(ASTIntConstNode& node) {
     erase_children(node, AST_NODE_TYPE::TEMP_NODE);
+}
+
+void ASTBuilderVisitor::visit(ASTTempParentNode& node) {
+    if (node.symbol == "<expression>") {
+        if (node.children.size() == 2) {
+                ID::ASTNodeId first = node.children.at(0);
+                ID::ASTNodeId second = node.children.at(1);
+                if ((ast.get_node(first)->node_type == AST_NODE_TYPE::INT_CONST_NODE || ast.get_node(first)->node_type == AST_NODE_TYPE::IDENT_NODE) && ast.get_node(second)->node_type == AST_NODE_TYPE::BINARY_OP_NODE) {
+                    ast.get_node(second)->children.push_back(first);
+                    ast.get_node(first)->parent = second;
+                    node.children.erase(node.children.begin(), node.children.begin() + 1);
+                }
+        }
+
+        for (ID::ASTNodeId child : node.children) {
+            ast.get_node(node.parent)->children.push_back(child);
+        }
+
+        auto it = ast.get_node(node.parent)->children.begin();
+        while (it != ast.get_node(node.parent)->children.end()) {
+            if (ast.get_node(*it)->node_type == AST_NODE_TYPE::TEMP_PARENT_NODE) {
+                it = ast.get_node(node.parent)->children.erase(it, it + 1);
+            } else {
+                it++;
+            }
+        }
+    } else if (node.symbol == "<variabledefinition>") {
+        erase_children(node, AST_NODE_TYPE::TEMP_NODE);
+        
+        if (node.children.size() > 0) {
+            ast.get_node(node.parent)->children.push_back(node.children.at(0));
+        }
+    }
+}
+
+void ASTBuilderVisitor::visit(ASTVariableDeclNode& node) {
+    erase_children(node, AST_NODE_TYPE::TEMP_NODE);
+    erase_children(node, AST_NODE_TYPE::TYPE_NODE);
+
+    ID::ASTNodeId variable_def_child;
+
+    for (ID::ASTNodeId child : node.children) {
+        if (ast.get_node(child)->node_type == AST_NODE_TYPE::TEMP_PARENT_NODE) {
+            variable_def_child = child;
+        }
+    }
+
+    ast.remove_node(variable_def_child);
 }
 
 void ASTPrinterVisitor::visit(ASTRootNode& node) {
@@ -176,4 +226,16 @@ void ASTPrinterVisitor::visit(ASTIdentNode& node) {
 
 void ASTPrinterVisitor::visit(ASTIntConstNode& node) {
     std::cout << "Int const " << node.value << std::endl;
+}
+
+void ASTPrinterVisitor::visit(ASTTempParentNode& node) {
+    std::cout << "Temp parent " << node.symbol << std::endl;
+}
+
+void ASTPrinterVisitor::visit(ASTVariableDeclNode& node) {
+    if (node.has_definition) {
+        std::cout << "Variable definition" << std::endl;
+    } else {
+        std::cout << "Variable declaration" << std::endl;
+    }
 }

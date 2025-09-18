@@ -6,11 +6,17 @@
 
 #include "../tools/memory.h"
 
+enum class ENTRY_TYPE {
+    FUNCTION,
+    VARIABLE
+};
+
 struct SymbolTableEntry {
+    ENTRY_TYPE entry_type;
     std::string identifier;
     ID::ASTNodeId node_id;
 
-    SymbolTableEntry(const std::string& identifier, ID::ASTNodeId node_id) : identifier(identifier), node_id(node_id) {}
+    SymbolTableEntry(const std::string& identifier, ID::ASTNodeId node_id, ENTRY_TYPE type) : identifier(identifier), node_id(node_id), entry_type(type) {}
 };
 
 class SymbolTable {
@@ -22,7 +28,8 @@ class SymbolTable {
 
         static constexpr ID::SymbolTableId invalid_entry = -1;
 
-        ID::SymbolTableId add(ID::ASTNodeId, const std::string& string);
+        ID::SymbolTableId add_function(ID::ASTNodeId, const std::string& string);
+        ID::SymbolTableId add_variable(ID::ASTNodeId, const std::string& string);
 
         SymbolTableEntry& get(ID::SymbolTableId);
         const SymbolTableEntry& get(const ID::SymbolTableId) const;
