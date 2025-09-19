@@ -49,7 +49,7 @@ class ASTBuilderVisitor : public NodeVisitor {
         void erase_children(ASTNode&, AST_NODE_TYPE);
         void erase_children(ASTNode&, std::function<bool(ID::ASTNodeId)>);
         void promote_children(ID::ASTNodeId);
-        void promote_children(ID::ASTNodeId, std::function<bool(ID::ASTNodeId)>);
+        void promote_children_on_condition(ID::ASTNodeId, std::function<bool(ID::ASTNodeId)>);
         void promote_children_by_type(AST_NODE_TYPE, ID::ASTNodeId);
     public:
         ASTBuilderVisitor(AST& ast) : ast(ast) {}

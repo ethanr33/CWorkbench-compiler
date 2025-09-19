@@ -50,15 +50,15 @@ int main(int argc, char** argv) {
         return 1;
     }
     
-    // AssemblyGenerator generator(parser.ast, symbol_table);
+    AssemblyGenerator generator(parser.ast, symbol_table);
 
-    // try {
-    //     generator.convert_AST_to_assembly();
-    //     generator.output_assembly_to_file("tmp/out.asm");
-    // } catch (const std::runtime_error& e) {
-    //     std::cout << "Error during codegen: " << e.what() << std::endl;
-    //     return 1;
-    // }
+    try {
+        generator.convert_AST_to_assembly();
+        generator.output_assembly_to_file("tmp/out.asm");
+    } catch (const std::runtime_error& e) {
+        std::cout << "Error during codegen: " << e.what() << std::endl;
+        return 1;
+    }
 
     return 0;
 }
