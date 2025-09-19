@@ -20,6 +20,18 @@ void ASTBuilderVisitor::erase_children(ASTNode& node, AST_NODE_TYPE node_type) {
     }
 }
 
+void ASTBuilderVisitor::erase_children(ASTNode& node, std::function<bool(ID::ASTNodeId)> condition) {
+    for (auto it = node.children.begin(); it != node.children.end();) {
+        ID::ASTNodeId child = *it;
+
+        if (condition(child)) {
+            it = node.children.erase(it);
+        } else {
+            it++;
+        }
+    }
+}
+
 // Node has to be a child of the current iterating node
 void ASTBuilderVisitor::promote_children(ID::ASTNodeId node_id) {
     ID::ASTNodeId parent = ast.get_node(node_id)->parent;
@@ -28,6 +40,23 @@ void ASTBuilderVisitor::promote_children(ID::ASTNodeId node_id) {
 
     for (ID::ASTNodeId grandchild : ast.get_node(node_id)->children) {
         node_it = ast.get_node(parent)->children.insert(node_it, grandchild);
+        node_it++;
+    }
+
+    auto it = std::find(ast.get_node(parent)->children.begin(), ast.get_node(parent)->children.end(), node_id);
+    ast.get_node(parent)->children.erase(it, it + 1);
+}
+
+void ASTBuilderVisitor::promote_children(ID::ASTNodeId node_id, std::function<bool(ID::ASTNodeId)> condition) {
+    ID::ASTNodeId parent = ast.get_node(node_id)->parent;
+
+    auto node_it = std::find(ast.get_node(parent)->children.begin(), ast.get_node(parent)->children.end(), node_id);
+
+    for (ID::ASTNodeId grandchild : ast.get_node(node_id)->children) {
+        if (condition(grandchild)) {
+            node_it = ast.get_node(parent)->children.insert(node_it, grandchild);
+        }
+        node_it++;
     }
 
     auto it = std::find(ast.get_node(parent)->children.begin(), ast.get_node(parent)->children.end(), node_id);
@@ -53,10 +82,10 @@ void ASTBuilderVisitor::visit(ASTRootNode& node) {
 }
 
 void ASTBuilderVisitor::visit(ASTFunctionNode& node) {
+    promote_children_by_type(AST_NODE_TYPE::TEMP_PARENT_NODE, node.id);
+
     erase_children(node, AST_NODE_TYPE::TEMP_NODE);
     erase_children(node, AST_NODE_TYPE::IDENT_NODE);
-
-    promote_children_by_type(AST_NODE_TYPE::TEMP_PARENT_NODE, node.id);
 }
 
 void ASTBuilderVisitor::visit(ASTReturnNode& node) {
@@ -68,51 +97,51 @@ void ASTBuilderVisitor::visit(ASTReturnNode& node) {
     
     // This can be fixed by moving the literal value node to the bottom of the AST tree,
     // There will be a binary op node there with one child, so add it there
-    if (node.children.size() == 2) {
-        ID::ASTNodeId intconst_id = Arena<ASTNode>::invalid_id;
-        ID::ASTNodeId binop_id = Arena<ASTNode>::invalid_id;
+    // if (node.children.size() == 2) {
+    //     ID::ASTNodeId intconst_id = Arena<ASTNode>::invalid_id;
+    //     ID::ASTNodeId binop_id = Arena<ASTNode>::invalid_id;
 
-        auto intconst_iter = node.children.begin();
+    //     auto intconst_iter = node.children.begin();
 
-        for (auto it = node.children.begin(); it != node.children.end(); it++) {
-            ID::ASTNodeId child = *it;
-            if (ast.get_node(child)->node_type == AST_NODE_TYPE::INT_CONST_NODE) {
-                intconst_id = child;
-                intconst_iter = it;
-            } else if (ast.get_node(child)->node_type == AST_NODE_TYPE::BINARY_OP_NODE) {
-                binop_id = child;
-            }
-        }
+    //     for (auto it = node.children.begin(); it != node.children.end(); it++) {
+    //         ID::ASTNodeId child = *it;
+    //         if (ast.get_node(child)->node_type == AST_NODE_TYPE::INT_CONST_NODE) {
+    //             intconst_id = child;
+    //             intconst_iter = it;
+    //         } else if (ast.get_node(child)->node_type == AST_NODE_TYPE::BINARY_OP_NODE) {
+    //             binop_id = child;
+    //         }
+    //     }
 
-        do {
-            for (ID::ASTNodeId child : ast.get_node(binop_id)->children) {
-                if (ast.get_node(child)->node_type == AST_NODE_TYPE::BINARY_OP_NODE) {
-                    binop_id = child;
-                    break;
-                }
-            } 
-        } while (ast.get_node(binop_id)->children.size() != 1);
+    //     do {
+    //         for (ID::ASTNodeId child : ast.get_node(binop_id)->children) {
+    //             if (ast.get_node(child)->node_type == AST_NODE_TYPE::BINARY_OP_NODE) {
+    //                 binop_id = child;
+    //                 break;
+    //             }
+    //         } 
+    //     } while (ast.get_node(binop_id)->children.size() != 1);
 
-        ast.get_node(binop_id)->children.push_back(intconst_id);
-        node.children.erase(intconst_iter, intconst_iter + 1);
+    //     ast.get_node(binop_id)->children.push_back(intconst_id);
+    //     node.children.erase(intconst_iter, intconst_iter + 1);
 
-        ast.get_node(intconst_id)->parent = binop_id;
-    }
+    //     ast.get_node(intconst_id)->parent = binop_id;
+    // }
 
-    for (auto it = node.children.begin(); it != node.children.end();) {
-        ID::ASTNodeId child = *it;
-        if (ast.get_node(child)->node_type == AST_NODE_TYPE::BINARY_OP_NODE && ast.get_node(child)->children.size() == 0) {
-            it = node.children.erase(it, it + 1);
-        } else {
-            it++;
-        }
-    }
+    // for (auto it = node.children.begin(); it != node.children.end();) {
+    //     ID::ASTNodeId child = *it;
+    //     if (ast.get_node(child)->node_type == AST_NODE_TYPE::BINARY_OP_NODE && ast.get_node(child)->children.size() == 0) {
+    //         it = node.children.erase(it, it + 1);
+    //     } else {
+    //         it++;
+    //     }
+    // }
 
-    for (ID::ASTNodeId child : node.children) {
-        if (ast.get_node(child)->node_type == AST_NODE_TYPE::TEMP_PARENT_NODE) {
-            promote_children(child);
-        }
-    }
+    // for (ID::ASTNodeId child : node.children) {
+    //     if (ast.get_node(child)->node_type == AST_NODE_TYPE::TEMP_PARENT_NODE) {
+    //         promote_children(child);
+    //     }
+    // }
 }
 
 void ASTBuilderVisitor::visit(ASTTypeNode& node) {
@@ -120,6 +149,8 @@ void ASTBuilderVisitor::visit(ASTTypeNode& node) {
 }
 
 void ASTBuilderVisitor::visit(ASTBinaryOpNode& node) {
+
+    promote_children_by_type(AST_NODE_TYPE::TEMP_PARENT_NODE, node.id);
 
     // Get operation for binary op node (if appliciable)
     for (auto it = node.children.begin(); it != node.children.end();) {
@@ -135,33 +166,19 @@ void ASTBuilderVisitor::visit(ASTBinaryOpNode& node) {
 
     erase_children(node, AST_NODE_TYPE::TEMP_NODE);
 
-    // Remove invalid binary op nodes
-    // These are created as a result of the grammar having multiple rules to create one binary operation
-    // To remove, just make node's children node's siblings, and delete the invalid node
-    // if (node.op == BINARY_OP::INVALID) {
-    //     vector<ID::ASTNodeId>& children = node.children;
-    //     vector<ID::ASTNodeId>& siblings = ast.get_node(node.parent)->children;
+    erase_children(node, [this](ID::ASTNodeId node_id) {
+        if (ast.get_node(node_id)->node_type == AST_NODE_TYPE::BINARY_OP_NODE) {
+            return ast.get_node(node_id)->children.size() == 0;
+        } else {
+            return false;
+        }
+    });
 
-    //     siblings.insert(siblings.end(), children.begin(), children.end());
-    //     children.clear();
-
-    //     for (auto it = siblings.begin(); it != siblings.end();) {
-    //         ID::ASTNodeId sibling = *it;
-    //         if (ast.get_node(sibling)->node_type == AST_NODE_TYPE::BINARY_OP_NODE && dynamic_cast<ASTBinaryOpNode*>(ast.get_node(sibling).get())->op == BINARY_OP::INVALID) {
-    //             it = siblings.erase(it, it + 1);
-    //         } else {
-    //             it++;
-    //         }
+    // if (node.children.size() == 2) {
+    //     if (ast.get_node(node.children.at(0))->node_type == AST_NODE_TYPE::INT_CONST_NODE && ast.get_node(node.children.at(1))->node_type == AST_NODE_TYPE::BINARY_OP_NODE) {
+    //         std::swap(node.children.at(0), node.children.at(1));
     //     }
     // }
-
-    promote_children_by_type(AST_NODE_TYPE::TEMP_PARENT_NODE, node.id);
-
-    if (node.children.size() == 2) {
-        if (ast.get_node(node.children.at(0))->node_type == AST_NODE_TYPE::INT_CONST_NODE && ast.get_node(node.children.at(1))->node_type == AST_NODE_TYPE::BINARY_OP_NODE) {
-            std::swap(node.children.at(0), node.children.at(1));
-        }
-    }
 }
 
 void ASTBuilderVisitor::visit(ASTTempNode& node) {
@@ -188,28 +205,25 @@ void ASTBuilderVisitor::visit(ASTIntConstNode& node) {
 
 void ASTBuilderVisitor::visit(ASTTempParentNode& node) {
     if (node.symbol == "<expression>") {
-        if (node.children.size() == 2) {
-                ID::ASTNodeId first = node.children.at(0);
-                ID::ASTNodeId second = node.children.at(1);
-                if ((ast.get_node(first)->node_type == AST_NODE_TYPE::INT_CONST_NODE || ast.get_node(first)->node_type == AST_NODE_TYPE::IDENT_NODE) && ast.get_node(second)->node_type == AST_NODE_TYPE::BINARY_OP_NODE) {
-                    ast.get_node(second)->children.push_back(first);
-                    ast.get_node(first)->parent = second;
-                    node.children.erase(node.children.begin(), node.children.begin() + 1);
-                }
-        }
+        promote_children_by_type(AST_NODE_TYPE::TEMP_PARENT_NODE, node.id);
 
+        erase_children(node, [this](ID::ASTNodeId node_id) {
+            if (ast.get_node(node_id)->node_type == AST_NODE_TYPE::BINARY_OP_NODE) {
+                return ast.get_node(node_id)->children.size() == 0;
+            } else {
+                return false;
+            }
+        });
+
+        // Expression node may contain  two children: a literal and a binary op
+        // Obviously this is not parseable, so we need to put the literal inside of a binary op
+    } else if (node.symbol == "<functionbody>") {
+        promote_children_by_type(AST_NODE_TYPE::TEMP_PARENT_NODE, node.id);
     }
 }
 
 void ASTBuilderVisitor::visit(ASTVariableDeclNode& node) {
-    erase_children(node, AST_NODE_TYPE::TEMP_NODE);
-    erase_children(node, AST_NODE_TYPE::TYPE_NODE);
 
-    for (ID::ASTNodeId child : node.children) {
-        if (ast.get_node(child)->node_type == AST_NODE_TYPE::TEMP_PARENT_NODE) {
-            promote_children(child);
-        }
-    }
 }
 
 void ASTPrinterVisitor::visit(ASTRootNode& node) {
@@ -237,7 +251,7 @@ void ASTPrinterVisitor::visit(ASTTempNode& node) {
 }
 
 void ASTPrinterVisitor::visit(ASTIdentNode& node) {
-    std::cout << "Ident" << std::endl;
+    std::cout << "Ident " << node.identifier << std::endl;
 
 }
 

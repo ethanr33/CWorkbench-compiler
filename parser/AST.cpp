@@ -109,7 +109,7 @@ bool AST::construct_production_node(int production_index, stack<ID::ASTNodeId>& 
         parent_node = add_node(std::make_unique<ASTBinaryOpNode>());
     } else if (production_symbol == "<variabledeclaration>") {
         parent_node = add_node(std::make_unique<ASTVariableDeclNode>());
-    } else if (production_symbol == "<expression>" || production_symbol == "<variabledefinition>") {
+    } else {
         parent_node = add_node(std::make_unique<ASTTempParentNode>(production_symbol));
     }
 
