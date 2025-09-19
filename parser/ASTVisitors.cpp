@@ -203,6 +203,7 @@ void ASTBuilderVisitor::visit(ASTTempParentNode& node) {
             });
 
             ast.get_node(binop_node)->children.push_back(const_node);
+            ast.get_node(const_node)->parent = binop_node;
         }
 
     } else if (node.symbol == "<functionbody>") {

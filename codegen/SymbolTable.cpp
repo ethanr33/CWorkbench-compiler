@@ -25,8 +25,6 @@ const SymbolTableEntry& SymbolTable::get(const ID::SymbolTableId id) const {
 }
 
 SymbolTableEntry& SymbolTable::get_by_node_id(ID::ASTNodeId id) {
-    ID::SymbolTableId entry = get_node_entry(id);
-
     return table_arena.get(get_node_entry(id));
 }
 
