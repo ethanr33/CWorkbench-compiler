@@ -6,6 +6,19 @@
 #include "../parser/AST.h"
 #include "AssemblyBuilder.h"
 
+void AssemblyBuilder::allocate_memory_helper(ID::ASTNodeId node_id) {
+
+    ast.get_node(node_id)->visit(allocator);
+
+    for (ID::ASTNodeId child : ast.get_node(node_id)->children) {
+        allocate_memory_helper(child);
+    }
+} 
+
+void AssemblyBuilder::allocate_memory() {
+    allocate_memory_helper(ast.get_root_id());
+}
+
 void AssemblyBuilder::clear_generated_assembly() {
     generated_assembly_prolog = "";
     generated_assembly_body = "";
@@ -79,14 +92,36 @@ void AssemblyBuilder::visit(ASTTypeNode& node) {
 void AssemblyBuilder::visit(ASTBinaryOpNode& node) {
     clear_generated_assembly();
 
-    generated_assembly_epilog += "add rax, r12\n";
+    assert(node.op != BINARY_OP::INVALID);
 
-    if (used_registers.at("r13")) {
-        generated_assembly_epilog += "add rax, r13\n";
-        used_registers.at("r13") = false;
+    switch (node.op) {
+        case BINARY_OP::ADDITION:
+            generated_assembly_epilog += "add rax, r12\n";
+
+            if (used_registers.at("r13")) {
+                generated_assembly_epilog += "add rax, r13\n";
+                used_registers.at("r13") = false;
+            }
+
+            used_registers.at("r12") = false;
+            break;
+        case BINARY_OP::ASSIGNMENT:
+            // Assignment is a special binary op case, because we need to get the identifier to assign to
+
+            assert(node.children.size() == 2);
+
+            ID::ASTNodeId assignee = node.children.at(0);
+        
+            uint32_t offset = symbol_table.get_by_identifier(dynamic_cast<ASTIdentNode*>(ast.get_node(assignee).get())->identifier).offset;
+
+            generated_assembly_epilog += std::format("mov [rbp - {:d}], rax\n", offset);
+
+            used_registers.at("r12") = false;
+
+            generated_assembly_epilog += std::format("mov rax, 0\n");
+
+            break;
     }
-
-    used_registers.at("r12") = false;
 }
 
 void AssemblyBuilder::visit(ASTTempNode& node) {
@@ -96,30 +131,30 @@ void AssemblyBuilder::visit(ASTTempNode& node) {
 void AssemblyBuilder::visit(ASTIdentNode& node) {
     clear_generated_assembly();
 
-    int offset = symbol_table.get_by_identifier(node.identifier).offset;
+    uint32_t offset = symbol_table.get_by_identifier(node.identifier).offset;
 
     AST_NODE_TYPE parent_type = ast.get_node(node.parent)->node_type;
     switch (parent_type) {
         case AST_NODE_TYPE::RETURN_NODE:
-            generated_assembly_body += std::format("mov rax, [ebp-{:d}]\n", offset);
+            generated_assembly_body += std::format("mov rax, [rbp-{:d}]\n", offset);
             break;
         case AST_NODE_TYPE::BINARY_OP_NODE:
+            if (dynamic_cast<ASTBinaryOpNode*>(ast.get_node(node.parent).get())->op == BINARY_OP::ASSIGNMENT) {
+                if (ast.get_node(node.parent)->children.at(0) == node.id) {
+                    // Corresponds to the identifier being on the LHS, it is being assigned to
+                    return;
+                }
+            }
+
             if (!used_registers.at("r12")) {
-                generated_assembly_body += std::format("mov rax, [ebp-{:d}]\n", offset);
+                generated_assembly_body += std::format("mov r12, [rbp-{:d}]\n", offset);
                 used_registers.at("r12") = true;
             } else if (!used_registers.at("r13")) {
-                generated_assembly_body += std::format("mov rax, [ebp-{:d}]\n", offset);
+                generated_assembly_body += std::format("mov r13, [rbp-{:d}]\n", offset);
                 used_registers.at("r13") = true;
             }
             break;
         case AST_NODE_TYPE::VARIABLE_DECL_NODE:
-            if (!used_registers.at("r12")) {
-                generated_assembly_body += std::format("mov rax, [ebp-{:d}]\n", offset);
-                used_registers.at("r12") = true;
-            } else if (!used_registers.at("r13")) {
-                generated_assembly_body += std::format("mov rax, [ebp-{:d}]\n", offset);
-                used_registers.at("r13") = true;
-            }
             break;
         default:
             throw std::runtime_error(std::format("Invalid node arrangement: INT_CONST node is a child of {:d}",  std::to_underlying(parent_type)));
@@ -136,6 +171,14 @@ void AssemblyBuilder::visit(ASTIntConstNode& node) {
             generated_assembly_body += std::format("mov rax, {:d}\n", node.value);
             break;
         case AST_NODE_TYPE::BINARY_OP_NODE:
+
+            if (dynamic_cast<ASTBinaryOpNode*>(ast.get_node(node.parent).get())->op == BINARY_OP::ASSIGNMENT) {
+                if (ast.get_node(node.parent)->children.at(0) == node.id) {
+                    // int const can't be assgined to
+                    throw std::runtime_error("Attempting to assign to a value which can't be assigned to");
+                }
+            }
+
             if (!used_registers.at("r12")) {
                 generated_assembly_body += std::format("mov r12, {:d}\n", node.value);
                 used_registers.at("r12") = true;
@@ -145,13 +188,7 @@ void AssemblyBuilder::visit(ASTIntConstNode& node) {
             }
             break;
         case AST_NODE_TYPE::VARIABLE_DECL_NODE:
-            if (!used_registers.at("r12")) {
-                generated_assembly_body += std::format("mov r12, {:d}\n", node.value);
-                used_registers.at("r12") = true;
-            } else if (!used_registers.at("r13")) {
-                generated_assembly_body += std::format("mov r13, {:d}\n", node.value);
-                used_registers.at("r13") = true;
-            }
+            generated_assembly_body += std::format("mov rax, {:d}\n", node.value);
             break;
         default:
             throw std::runtime_error(std::format("Invalid node arrangement: INT_CONST node is a child of {:d}",  std::to_underlying(parent_type)));
@@ -160,15 +197,22 @@ void AssemblyBuilder::visit(ASTIntConstNode& node) {
 }
 
 void AssemblyBuilder::visit(ASTTempParentNode& node) {
-    assert("Found temp parent node in AST");
+    throw std::runtime_error("Found ASTTempParent node in trimmed AST");
 }
 
 void AssemblyBuilder::visit(ASTVariableDeclNode& node) {
     clear_generated_assembly();
 
-    generated_assembly_epilog += "push r12\n";
-    symbol_table.get_by_node_id(node.id).offset = variable_stack_offset;
-    variable_stack_offset += 4;
+    generated_assembly_epilog += "push rax\n";
+    generated_assembly_epilog += "mov rax, 0\n";
 
     used_registers.at("r12") = false;
+    used_registers.at("r13") = false;
+}
+
+void MemoryAllocator::visit(ASTVariableDeclNode& node) {
+    assert(ast.get_node(node.children.at(0))->node_type == AST_NODE_TYPE::IDENT_NODE);
+
+    max_stack_offset += 8;
+    symbol_table.get_by_node_id(node.id).offset = max_stack_offset;
 }

@@ -12,9 +12,6 @@ ID::SymbolTableId SymbolTable::add_variable(ID::ASTNodeId node_id, const std::st
     ID::SymbolTableId table_id = table_arena.add(SymbolTableEntry(ident, node_id, ENTRY_TYPE::VARIABLE));
     ident_to_entry.insert({ident, table_id});
     node_id_to_entry.insert({node_id, table_id});
-    
-    table_arena.get(table_id).offset = variable_stack_offset;
-    variable_stack_offset += 4;
 
     return table_id;
 }

@@ -16,7 +16,7 @@ struct SymbolTableEntry {
     std::string identifier;
     ID::ASTNodeId node_id;
 
-    int offset;
+    uint32_t offset;
 
     SymbolTableEntry(const std::string& identifier, ID::ASTNodeId node_id, ENTRY_TYPE type) : identifier(identifier), node_id(node_id), entry_type(type) {}
 };
@@ -26,8 +26,6 @@ class SymbolTable {
         Arena<SymbolTableEntry> table_arena;
         std::unordered_map<std::string, ID::SymbolTableId> ident_to_entry;
         std::unordered_map<ID::ASTNodeId, ID::SymbolTableId> node_id_to_entry;
-
-        uint32_t variable_stack_offset = 4;
     public:
 
         static constexpr ID::SymbolTableId invalid_entry = -1;

@@ -208,7 +208,7 @@ void ASTBuilderVisitor::visit(ASTTempParentNode& node) {
                 return node_id == const_node;
             });
 
-            ast.get_node(binop_node)->children.push_back(const_node);
+            ast.get_node(binop_node)->children.insert(ast.get_node(binop_node)->children.begin(), const_node);
             ast.get_node(const_node)->parent = binop_node;
         }
 
