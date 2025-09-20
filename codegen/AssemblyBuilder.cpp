@@ -95,6 +95,36 @@ void AssemblyBuilder::visit(ASTTempNode& node) {
 
 void AssemblyBuilder::visit(ASTIdentNode& node) {
     clear_generated_assembly();
+
+    int offset = symbol_table.get_by_identifier(node.identifier).offset;
+
+    AST_NODE_TYPE parent_type = ast.get_node(node.parent)->node_type;
+    switch (parent_type) {
+        case AST_NODE_TYPE::RETURN_NODE:
+            generated_assembly_body += std::format("mov rax, [ebp-{:d}]\n", offset);
+            break;
+        case AST_NODE_TYPE::BINARY_OP_NODE:
+            if (!used_registers.at("r12")) {
+                generated_assembly_body += std::format("mov rax, [ebp-{:d}]\n", offset);
+                used_registers.at("r12") = true;
+            } else if (!used_registers.at("r13")) {
+                generated_assembly_body += std::format("mov rax, [ebp-{:d}]\n", offset);
+                used_registers.at("r13") = true;
+            }
+            break;
+        case AST_NODE_TYPE::VARIABLE_DECL_NODE:
+            if (!used_registers.at("r12")) {
+                generated_assembly_body += std::format("mov rax, [ebp-{:d}]\n", offset);
+                used_registers.at("r12") = true;
+            } else if (!used_registers.at("r13")) {
+                generated_assembly_body += std::format("mov rax, [ebp-{:d}]\n", offset);
+                used_registers.at("r13") = true;
+            }
+            break;
+        default:
+            throw std::runtime_error(std::format("Invalid node arrangement: INT_CONST node is a child of {:d}",  std::to_underlying(parent_type)));
+            break;
+    }
 }
 
 void AssemblyBuilder::visit(ASTIntConstNode& node) {
@@ -106,6 +136,15 @@ void AssemblyBuilder::visit(ASTIntConstNode& node) {
             generated_assembly_body += std::format("mov rax, {:d}\n", node.value);
             break;
         case AST_NODE_TYPE::BINARY_OP_NODE:
+            if (!used_registers.at("r12")) {
+                generated_assembly_body += std::format("mov r12, {:d}\n", node.value);
+                used_registers.at("r12") = true;
+            } else if (!used_registers.at("r13")) {
+                generated_assembly_body += std::format("mov r13, {:d}\n", node.value);
+                used_registers.at("r13") = true;
+            }
+            break;
+        case AST_NODE_TYPE::VARIABLE_DECL_NODE:
             if (!used_registers.at("r12")) {
                 generated_assembly_body += std::format("mov r12, {:d}\n", node.value);
                 used_registers.at("r12") = true;
@@ -126,4 +165,10 @@ void AssemblyBuilder::visit(ASTTempParentNode& node) {
 
 void AssemblyBuilder::visit(ASTVariableDeclNode& node) {
     clear_generated_assembly();
+
+    generated_assembly_epilog += "push r12\n";
+    symbol_table.get_by_node_id(node.id).offset = variable_stack_offset;
+    variable_stack_offset += 4;
+
+    used_registers.at("r12") = false;
 }

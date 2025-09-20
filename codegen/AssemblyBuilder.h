@@ -39,6 +39,7 @@ class AssemblyBuilder : public NodeVisitor {
         void visit(ASTVariableDeclNode&) override;
 
         void validate_AST() const;
+        void initialize_local_variables();
 
          ~AssemblyBuilder() = default;
 

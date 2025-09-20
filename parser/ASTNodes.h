@@ -85,7 +85,7 @@ struct ASTFunctionNode : ASTNode {
 };
 
 struct ASTVariableDeclNode : ASTNode {
-    bool has_definition;
+    bool defines_here;
 
     ASTVariableDeclNode() : ASTNode(AST_NODE_TYPE::VARIABLE_DECL_NODE) {}
 
