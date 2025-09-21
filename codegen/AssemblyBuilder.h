@@ -1,5 +1,10 @@
 
+#include <variant>
+#include <stack>
+
 #include "../parser/ASTVisitors.h"
+
+using RegisterID = unsigned char;
 
 class MemoryAllocator : public NodeVisitor {
     private:
@@ -39,9 +44,12 @@ class AssemblyBuilder : public NodeVisitor {
 
         void allocate_memory_helper(ID::ASTNodeId);
 
+        std::stack<std::variant<int, std::string, RegisterID>> operand_stack;
+
         std::unordered_map<string, bool> used_registers = {
             {"r12", false},
-            {"r13", false}
+            {"r13", false},
+            {"r14", false}
         };
         
     public:

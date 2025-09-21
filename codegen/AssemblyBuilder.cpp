@@ -82,7 +82,6 @@ void AssemblyBuilder::visit(ASTFunctionNode& node) {
 
 void AssemblyBuilder::visit(ASTReturnNode& node) {
     clear_generated_assembly();
-
 }
 
 void AssemblyBuilder::visit(ASTTypeNode& node) {
@@ -94,31 +93,66 @@ void AssemblyBuilder::visit(ASTBinaryOpNode& node) {
 
     assert(node.op != BINARY_OP::INVALID);
 
+    if (ast.get_node(node.parent)->node_type != AST_NODE_TYPE::BINARY_OP_NODE) {
+        generated_assembly_prolog += "mov rax, 0\n";
+    }
+
     switch (node.op) {
         case BINARY_OP::ADDITION:
-            generated_assembly_epilog += "add rax, r12\n";
 
-            if (used_registers.at("r13")) {
-                generated_assembly_epilog += "add rax, r13\n";
-                used_registers.at("r13") = false;
+            int num_operand_nodes;
+
+            if (ast.get_node(node.children.at(1))->node_type == AST_NODE_TYPE::BINARY_OP_NODE) {
+                num_operand_nodes = 1;
+            } else {
+                num_operand_nodes = 2;
             }
 
-            used_registers.at("r12") = false;
+            if (std::get_if<int>(&operand_stack.top())) {
+                generated_assembly_epilog += std::format("mov r12, {:d}\n", std::get<int>(operand_stack.top()));
+                operand_stack.pop();
+            } else {
+                uint32_t offset = symbol_table.get_by_identifier(std::get<string>(operand_stack.top())).offset;
+                generated_assembly_epilog += std::format("mov r12, [rbp - {:d}]\n", std::get<int>(operand_stack.top()));
+                operand_stack.pop();
+            }
+
+            if (num_operand_nodes > 1 && std::get_if<int>(&operand_stack.top())) {
+                generated_assembly_epilog += std::format("mov r13, {:d}\n", std::get<int>(operand_stack.top()));
+                operand_stack.pop();
+            } else if (num_operand_nodes > 1) {
+                uint32_t offset = symbol_table.get_by_identifier(std::get<string>(operand_stack.top())).offset;
+                generated_assembly_epilog += std::format("mov r13, [rbp - {:d}]\n", offset);
+                operand_stack.pop();
+            }
+
+            generated_assembly_epilog += std::format("add rax, r12\n");
+
+            if (num_operand_nodes > 1) {
+                generated_assembly_epilog += std::format("add rax, r13\n");
+            }
+            
             break;
         case BINARY_OP::ASSIGNMENT:
             // Assignment is a special binary op case, because we need to get the identifier to assign to
 
-            assert(node.children.size() == 2);
+            // if (std::get_if<int>(&operand_stack.top())) {
+            //     generated_assembly_epilog += std::format("mov rax, {:d}", std::get<int>(operand_stack.top()));
+            // } else {
+            //     uint32_t offset = symbol_table.get_by_identifier(std::get<string>(operand_stack.top())).offset;
+            //     generated_assembly_epilog += std::format("mov rax, [rbp - {:d}]\n", offset);
+            // }
 
-            ID::ASTNodeId assignee = node.children.at(0);
-        
-            uint32_t offset = symbol_table.get_by_identifier(dynamic_cast<ASTIdentNode*>(ast.get_node(assignee).get())->identifier).offset;
+            operand_stack.pop();
 
-            generated_assembly_epilog += std::format("mov [rbp - {:d}], rax\n", offset);
+            if (std::get_if<string>(&operand_stack.top())) {
+                uint32_t offset = symbol_table.get_by_identifier(std::get<string>(operand_stack.top())).offset;
+                generated_assembly_epilog += std::format("mov [rbp - {:d}], rax\n", offset);
+            } else {
+                throw std::runtime_error("LHS of assignment expression is not assignable");
+            }
 
-            used_registers.at("r12") = false;
-
-            generated_assembly_epilog += std::format("mov rax, 0\n");
+            operand_stack.pop();
 
             break;
     }
@@ -136,25 +170,13 @@ void AssemblyBuilder::visit(ASTIdentNode& node) {
     AST_NODE_TYPE parent_type = ast.get_node(node.parent)->node_type;
     switch (parent_type) {
         case AST_NODE_TYPE::RETURN_NODE:
-            generated_assembly_body += std::format("mov rax, [rbp-{:d}]\n", offset);
+            generated_assembly_body += std::format("mov rax, [rbp - {:d}]\n", offset);
             break;
         case AST_NODE_TYPE::BINARY_OP_NODE:
-            if (dynamic_cast<ASTBinaryOpNode*>(ast.get_node(node.parent).get())->op == BINARY_OP::ASSIGNMENT) {
-                if (ast.get_node(node.parent)->children.at(0) == node.id) {
-                    // Corresponds to the identifier being on the LHS, it is being assigned to
-                    return;
-                }
-            }
-
-            if (!used_registers.at("r12")) {
-                generated_assembly_body += std::format("mov r12, [rbp-{:d}]\n", offset);
-                used_registers.at("r12") = true;
-            } else if (!used_registers.at("r13")) {
-                generated_assembly_body += std::format("mov r13, [rbp-{:d}]\n", offset);
-                used_registers.at("r13") = true;
-            }
+            operand_stack.push(node.identifier);
             break;
         case AST_NODE_TYPE::VARIABLE_DECL_NODE:
+            operand_stack.push(node.identifier);
             break;
         default:
             throw std::runtime_error(std::format("Invalid node arrangement: INT_CONST node is a child of {:d}",  std::to_underlying(parent_type)));
@@ -171,24 +193,10 @@ void AssemblyBuilder::visit(ASTIntConstNode& node) {
             generated_assembly_body += std::format("mov rax, {:d}\n", node.value);
             break;
         case AST_NODE_TYPE::BINARY_OP_NODE:
-
-            if (dynamic_cast<ASTBinaryOpNode*>(ast.get_node(node.parent).get())->op == BINARY_OP::ASSIGNMENT) {
-                if (ast.get_node(node.parent)->children.at(0) == node.id) {
-                    // int const can't be assgined to
-                    throw std::runtime_error("Attempting to assign to a value which can't be assigned to");
-                }
-            }
-
-            if (!used_registers.at("r12")) {
-                generated_assembly_body += std::format("mov r12, {:d}\n", node.value);
-                used_registers.at("r12") = true;
-            } else if (!used_registers.at("r13")) {
-                generated_assembly_body += std::format("mov r13, {:d}\n", node.value);
-                used_registers.at("r13") = true;
-            }
+            operand_stack.push(node.value);
             break;
         case AST_NODE_TYPE::VARIABLE_DECL_NODE:
-            generated_assembly_body += std::format("mov rax, {:d}\n", node.value);
+            operand_stack.push(node.value);
             break;
         default:
             throw std::runtime_error(std::format("Invalid node arrangement: INT_CONST node is a child of {:d}",  std::to_underlying(parent_type)));
@@ -203,11 +211,20 @@ void AssemblyBuilder::visit(ASTTempParentNode& node) {
 void AssemblyBuilder::visit(ASTVariableDeclNode& node) {
     clear_generated_assembly();
 
-    generated_assembly_epilog += "push rax\n";
-    generated_assembly_epilog += "mov rax, 0\n";
+    if (operand_stack.size() == 1) {
+        generated_assembly_epilog += "push rax\n";
+        return;
+    }
 
-    used_registers.at("r12") = false;
-    used_registers.at("r13") = false;
+    if (std::get_if<int>(&operand_stack.top())) {
+        generated_assembly_epilog = std::format("push {:d}\n", std::get<int>(operand_stack.top()));
+    } else {
+        uint32_t offset = symbol_table.get_by_identifier(std::get<string>(operand_stack.top())).offset;
+        generated_assembly_epilog += std::format("mov r14, [rbp - {:d}]\n", offset);  
+        generated_assembly_epilog += std::format("push r14\n", offset);  
+    }
+
+    operand_stack.pop();
 }
 
 void MemoryAllocator::visit(ASTVariableDeclNode& node) {
