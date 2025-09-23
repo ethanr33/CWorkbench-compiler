@@ -4,7 +4,7 @@
 
 #include "../parser/ASTVisitors.h"
 
-using RegisterID = unsigned char;
+enum class Register { RAX, R12 };
 
 class MemoryAllocator : public NodeVisitor {
     private:
@@ -39,18 +39,17 @@ class AssemblyBuilder : public NodeVisitor {
 
         MemoryAllocator allocator;
 
+        std::unordered_map<Register, string> register_keyword_map = {
+            {Register::RAX, "rax"},
+            {Register::R12, "r12"}
+        };
+
         bool has_valid_entry_point() const;
         void clear_generated_assembly();
 
         void allocate_memory_helper(ID::ASTNodeId);
 
-        std::stack<std::variant<int, std::string, RegisterID>> operand_stack;
-
-        std::unordered_map<string, bool> used_registers = {
-            {"r12", false},
-            {"r13", false},
-            {"r14", false}
-        };
+        std::stack<std::variant<int, std::string, Register>> operand_stack;
         
     public:
 

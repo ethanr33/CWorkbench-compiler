@@ -158,14 +158,17 @@ void ASTBuilderVisitor::visit(ASTIdentNode& node) {
             ast.get_symbol_table().add_function(node.parent, node.identifier);
             break;
         case AST_NODE_TYPE::VARIABLE_DECL_NODE:
-            // Check if variable was declared before, they can't be declared twice
-
             if (ast.get_symbol_table().has_identifier(node.identifier)) {
-                throw std::runtime_error("Variable " + node.identifier + " declared multiple times");
+                throw std::runtime_error("Redeclaration of variable " + node.identifier);
+            } else {
+                ast.get_symbol_table().add_variable(node.parent, node.identifier);
             }
 
-            ast.get_symbol_table().add_variable(node.parent, node.identifier);
+            break;
         default:
+            if (!ast.get_symbol_table().has_identifier(node.identifier)) {
+                throw std::runtime_error("Attemted to use identifier " + node.identifier + " before declaration");
+            }
             break;
     }
 
@@ -243,6 +246,8 @@ void ASTBuilderVisitor::visit(ASTVariableDeclNode& node) {
         node.defines_here = false;
     } else {
         node.defines_here = true;
+
+
     }
 }
 

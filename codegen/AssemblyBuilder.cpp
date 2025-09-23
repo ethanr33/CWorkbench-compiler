@@ -82,6 +82,16 @@ void AssemblyBuilder::visit(ASTFunctionNode& node) {
 
 void AssemblyBuilder::visit(ASTReturnNode& node) {
     clear_generated_assembly();
+
+    if (std::get_if<int>(&operand_stack.top())) {
+        generated_assembly_epilog = std::format("mov rax, {:d}\n", std::get<int>(operand_stack.top()));
+    } else if (std::get_if<string>(&operand_stack.top())) {
+        uint32_t offset = symbol_table.get_by_identifier(std::get<string>(operand_stack.top())).offset;
+        generated_assembly_epilog += std::format("mov rax, [rbp-{:d}]\n", offset);  
+    } else if (std::get_if<Register>(&operand_stack.top())) {
+        Register reg = std::get<Register>(operand_stack.top());
+        generated_assembly_epilog += std::format("mov rax, {}\n", register_keyword_map.at(reg));
+    }
 }
 
 void AssemblyBuilder::visit(ASTTypeNode& node) {
@@ -93,64 +103,64 @@ void AssemblyBuilder::visit(ASTBinaryOpNode& node) {
 
     assert(node.op != BINARY_OP::INVALID);
 
-    if (ast.get_node(node.parent)->node_type != AST_NODE_TYPE::BINARY_OP_NODE) {
-        generated_assembly_prolog += "mov rax, 0\n";
-    }
-
     switch (node.op) {
         case BINARY_OP::ADDITION:
-
-            int num_operand_nodes;
-
-            if (ast.get_node(node.children.at(1))->node_type == AST_NODE_TYPE::BINARY_OP_NODE) {
-                num_operand_nodes = 1;
-            } else {
-                num_operand_nodes = 2;
-            }
-
             if (std::get_if<int>(&operand_stack.top())) {
                 generated_assembly_epilog += std::format("mov r12, {:d}\n", std::get<int>(operand_stack.top()));
-                operand_stack.pop();
-            } else {
+            } else if (std::get_if<string>(&operand_stack.top())) {
                 uint32_t offset = symbol_table.get_by_identifier(std::get<string>(operand_stack.top())).offset;
-                generated_assembly_epilog += std::format("mov r12, [rbp - {:d}]\n", std::get<int>(operand_stack.top()));
-                operand_stack.pop();
-            }
+                generated_assembly_epilog += std::format("mov r12, [rbp-{:d}]\n", offset);  
+            } else if (std::get_if<Register>(&operand_stack.top())) {
+                Register reg = std::get<Register>(operand_stack.top());
+                generated_assembly_epilog += std::format("mov r12, {}\n", register_keyword_map.at(reg));
+            }     
 
-            if (num_operand_nodes > 1 && std::get_if<int>(&operand_stack.top())) {
-                generated_assembly_epilog += std::format("mov r13, {:d}\n", std::get<int>(operand_stack.top()));
-                operand_stack.pop();
-            } else if (num_operand_nodes > 1) {
-                uint32_t offset = symbol_table.get_by_identifier(std::get<string>(operand_stack.top())).offset;
-                generated_assembly_epilog += std::format("mov r13, [rbp - {:d}]\n", offset);
-                operand_stack.pop();
-            }
-
-            generated_assembly_epilog += std::format("add rax, r12\n");
-
-            if (num_operand_nodes > 1) {
-                generated_assembly_epilog += std::format("add rax, r13\n");
-            }
+            operand_stack.pop();
             
+            if (std::get_if<int>(&operand_stack.top())) {
+                generated_assembly_epilog += std::format("mov r13, {:d}\n", std::get<int>(operand_stack.top()));
+            } else if (std::get_if<string>(&operand_stack.top())) {
+                uint32_t offset = symbol_table.get_by_identifier(std::get<string>(operand_stack.top())).offset;
+                generated_assembly_epilog += std::format("mov r13, [rbp-{:d}]\n", offset);  
+            } else if (std::get_if<Register>(&operand_stack.top())) {
+                Register reg = std::get<Register>(operand_stack.top());
+                generated_assembly_epilog += std::format("mov r13, {}\n", register_keyword_map.at(reg));
+            }    
+
+            operand_stack.pop();
+
+            generated_assembly_epilog += "mov rax, 0\n";
+            generated_assembly_epilog += "add rax, r12\n";
+            generated_assembly_epilog += "add rax, r13\n";
+
+            operand_stack.push(Register::RAX);
+
             break;
         case BINARY_OP::ASSIGNMENT:
             // Assignment is a special binary op case, because we need to get the identifier to assign to
 
-            // if (std::get_if<int>(&operand_stack.top())) {
-            //     generated_assembly_epilog += std::format("mov rax, {:d}", std::get<int>(operand_stack.top()));
-            // } else {
-            //     uint32_t offset = symbol_table.get_by_identifier(std::get<string>(operand_stack.top())).offset;
-            //     generated_assembly_epilog += std::format("mov rax, [rbp - {:d}]\n", offset);
-            // }
+            std::variant<int, string, Register> rhs = operand_stack.top();
 
             operand_stack.pop();
 
-            if (std::get_if<string>(&operand_stack.top())) {
-                uint32_t offset = symbol_table.get_by_identifier(std::get<string>(operand_stack.top())).offset;
-                generated_assembly_epilog += std::format("mov [rbp - {:d}], rax\n", offset);
-            } else {
-                throw std::runtime_error("LHS of assignment expression is not assignable");
+            // If we are assigning to anything but a identifier, then this is not allowed!
+            if (!std::get_if<string>(&operand_stack.top())) {
+                throw std::runtime_error("Attempted to assign to non-assignable value");
             }
+
+            uint32_t lhs_offset = symbol_table.get_by_identifier(std::get<string>(operand_stack.top())).offset;
+
+            if (std::get_if<int>(&rhs)) {
+                generated_assembly_epilog += std::format("mov r14, {:d}\n", std::get<int>(rhs));
+                generated_assembly_epilog += std::format("mov [rbp-{:d}], r14\n", lhs_offset);
+            } else if (std::get_if<string>(&rhs)) {
+                uint32_t rhs_offset = symbol_table.get_by_identifier(std::get<string>(rhs)).offset;
+                generated_assembly_epilog += std::format("mov r14, [rbp-{:d}]\n", rhs_offset);
+                generated_assembly_epilog += std::format("mov [rbp-{:d}], r14\n", lhs_offset);  
+            } else if (std::get_if<Register>(&rhs)) {
+                Register reg = std::get<Register>(rhs);
+                generated_assembly_epilog += std::format("mov [rbp-{:d}], {}\n", lhs_offset, register_keyword_map.at(reg));
+            }     
 
             operand_stack.pop();
 
@@ -170,7 +180,7 @@ void AssemblyBuilder::visit(ASTIdentNode& node) {
     AST_NODE_TYPE parent_type = ast.get_node(node.parent)->node_type;
     switch (parent_type) {
         case AST_NODE_TYPE::RETURN_NODE:
-            generated_assembly_body += std::format("mov rax, [rbp - {:d}]\n", offset);
+            operand_stack.push(node.identifier);
             break;
         case AST_NODE_TYPE::BINARY_OP_NODE:
             operand_stack.push(node.identifier);
@@ -190,7 +200,7 @@ void AssemblyBuilder::visit(ASTIntConstNode& node) {
     AST_NODE_TYPE parent_type = ast.get_node(node.parent)->node_type;
     switch (parent_type) {
         case AST_NODE_TYPE::RETURN_NODE:
-            generated_assembly_body += std::format("mov rax, {:d}\n", node.value);
+            operand_stack.push(node.value);
             break;
         case AST_NODE_TYPE::BINARY_OP_NODE:
             operand_stack.push(node.value);
@@ -211,20 +221,25 @@ void AssemblyBuilder::visit(ASTTempParentNode& node) {
 void AssemblyBuilder::visit(ASTVariableDeclNode& node) {
     clear_generated_assembly();
 
-    if (operand_stack.size() == 1) {
-        generated_assembly_epilog += "push rax\n";
-        return;
-    }
-
-    if (std::get_if<int>(&operand_stack.top())) {
-        generated_assembly_epilog = std::format("push {:d}\n", std::get<int>(operand_stack.top()));
+    if (!node.defines_here) {
+        generated_assembly_epilog += "push 0\n";
+        operand_stack.pop(); // If there is no definition, there should only be one child that can be popped
     } else {
-        uint32_t offset = symbol_table.get_by_identifier(std::get<string>(operand_stack.top())).offset;
-        generated_assembly_epilog += std::format("mov r14, [rbp - {:d}]\n", offset);  
-        generated_assembly_epilog += std::format("push r14\n", offset);  
+        if (std::get_if<int>(&operand_stack.top())) {
+            generated_assembly_epilog += std::format("push {:d}\n", std::get<int>(operand_stack.top()));
+        } else if (std::get_if<string>(&operand_stack.top())) {
+            uint32_t offset = symbol_table.get_by_identifier(std::get<string>(operand_stack.top())).offset;
+            generated_assembly_epilog += std::format("mov r14, [rbp-{:d}]\n", offset);  
+            generated_assembly_epilog += std::format("push r14\n", offset);  
+        } else if (std::get_if<Register>(&operand_stack.top())) {
+            Register reg = std::get<Register>(operand_stack.top());
+            generated_assembly_epilog += std::format("push {}\n", register_keyword_map.at(reg));
+        }
+        operand_stack.pop();
+        operand_stack.pop();
+        // If there is a definition, there should be a child for the LHS and RHS, both need to be popped
     }
 
-    operand_stack.pop();
 }
 
 void MemoryAllocator::visit(ASTVariableDeclNode& node) {
