@@ -169,7 +169,7 @@ void AssemblyBuilder::visit(ASTBinaryOpNode& node) {
 }
 
 void AssemblyBuilder::visit(ASTTempNode& node) {
-    assert("Found temp node in AST");
+    throw std::runtime_error("Found temp node in AST");
 }
 
 void AssemblyBuilder::visit(ASTIdentNode& node) {
@@ -230,7 +230,7 @@ void AssemblyBuilder::visit(ASTVariableDeclNode& node) {
         } else if (std::get_if<string>(&operand_stack.top())) {
             uint32_t offset = symbol_table.get_by_identifier(std::get<string>(operand_stack.top())).offset;
             generated_assembly_epilog += std::format("mov r14, [rbp-{:d}]\n", offset);  
-            generated_assembly_epilog += std::format("push r14\n", offset);  
+            generated_assembly_epilog += "push r14\n";  
         } else if (std::get_if<Register>(&operand_stack.top())) {
             Register reg = std::get<Register>(operand_stack.top());
             generated_assembly_epilog += std::format("push {}\n", register_keyword_map.at(reg));

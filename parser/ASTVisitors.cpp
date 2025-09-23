@@ -167,7 +167,7 @@ void ASTBuilderVisitor::visit(ASTIdentNode& node) {
             break;
         default:
             if (!ast.get_symbol_table().has_identifier(node.identifier)) {
-                throw std::runtime_error("Attemted to use identifier " + node.identifier + " before declaration");
+                throw std::runtime_error("Attempted to use identifier " + node.identifier + " before declaration");
             }
             break;
     }
