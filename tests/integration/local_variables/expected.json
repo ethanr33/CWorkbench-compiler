@@ -34,5 +34,23 @@
     },
     "keywordasvarname.c": {
         "error": true
+    },
+    "baddecltype.c": {
+        "error": true
+    },
+    "undeclaredvar1.c": {
+        "error": true
+    },
+    "undeclaredvar2.c": {
+        "error": true
+    },
+    "undeclaredvar3.c": {
+        "error": true
+    },
+    "undeclaredvar4.c": {
+        "error": true
+    },
+    "redeclaration.c": {
+        "error": true
     }
 }
