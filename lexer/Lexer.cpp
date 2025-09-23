@@ -36,6 +36,8 @@ void Lexer::lex() {
             token_stream.push_back(Token(TOKEN_TYPE::C_CURLY, "}"));
         } else if (program_data.at(i) == '+') {
             token_stream.push_back(Token(TOKEN_TYPE::PLUS, "+"));
+        } else if (program_data.at(i) == '=') {
+            token_stream.push_back(Token(TOKEN_TYPE::EQUALS, "="));
         } else if (isdigit(program_data.at(i))) {
             // If we found a number, continue checking the string
             // until a non-numerical character is found

@@ -49,9 +49,7 @@ int main(int argc, char** argv) {
         std::cout << "Error while parsing: " << e.what() << std::endl;
         return 1;
     }
-
-    parser.ast.print_AST();
-
+    
     AssemblyGenerator generator(parser.ast, symbol_table);
 
     try {

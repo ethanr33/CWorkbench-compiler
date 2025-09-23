@@ -30,6 +30,7 @@ const std::unordered_map<std::string, TOKEN_TYPE> TERMINAL_MAP = {
     {"(",         TOKEN_TYPE::O_PAREN},
     {")",         TOKEN_TYPE::C_PAREN},
     {";",         TOKEN_TYPE::SEMICOLON},
+    {"=",         TOKEN_TYPE::EQUALS},
     {"$",         TOKEN_TYPE::END_OF_INPUT},
     {"ε",         TOKEN_TYPE::EPSILON},
     {"+",         TOKEN_TYPE::PLUS}
@@ -60,6 +61,8 @@ struct Rule {
     SymbolId symbol; // The nonterminal symbol which produces this rule
     vector<SymbolId> production_rule; // The symbols which make up this rule
     bool is_terminal; // True if this rule produces a single terminal symbol
+
+    int line_num; // Line at which this rule is defined
 
     Rule() : symbol(Arena<Symbol>::invalid_id) {}
     Rule(SymbolId symbol) : symbol(symbol) {}

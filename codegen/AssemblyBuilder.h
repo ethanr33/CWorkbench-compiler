@@ -1,6 +1,32 @@
 
+#include <variant>
+#include <stack>
+
 #include "../parser/ASTVisitors.h"
 
+enum class Register { RAX, R12 };
+
+class MemoryAllocator : public NodeVisitor {
+    private:
+        AST& ast;
+        SymbolTable& symbol_table;
+
+        uint32_t max_stack_offset = 0;
+    public:
+
+        MemoryAllocator(AST& ast, SymbolTable& table) : ast(ast), symbol_table(table) {}
+
+        void visit(ASTRootNode&) override {};
+        void visit(ASTFunctionNode&) override {};
+        void visit(ASTReturnNode&) override {};
+        void visit(ASTTypeNode&) override {};
+        void visit(ASTBinaryOpNode&) override {};
+        void visit(ASTTempNode&) override {};
+        void visit(ASTIdentNode&) override {};
+        void visit(ASTIntConstNode&) override {};
+        void visit(ASTTempParentNode&) override {}
+        void visit(ASTVariableDeclNode&) override;
+};
 
 class AssemblyBuilder : public NodeVisitor {
     private:
@@ -11,17 +37,23 @@ class AssemblyBuilder : public NodeVisitor {
         AST& ast;
         SymbolTable& symbol_table;
 
+        MemoryAllocator allocator;
+
+        std::unordered_map<Register, string> register_keyword_map = {
+            {Register::RAX, "rax"},
+            {Register::R12, "r12"}
+        };
+
         bool has_valid_entry_point() const;
         void clear_generated_assembly();
 
-        std::unordered_map<string, bool> used_registers = {
-            {"r12", false},
-            {"r13", false}
-        };
+        void allocate_memory_helper(ID::ASTNodeId);
+
+        std::stack<std::variant<int, std::string, Register>> operand_stack;
         
     public:
 
-        AssemblyBuilder(AST& ast, SymbolTable& table) : ast(ast), symbol_table(table) {}
+        AssemblyBuilder(AST& ast, SymbolTable& table) : ast(ast), symbol_table(table), allocator(ast, symbol_table) {}
 
         const string& get_prolog() const;
         const string& get_body() const;
@@ -35,8 +67,11 @@ class AssemblyBuilder : public NodeVisitor {
         void visit(ASTTempNode&) override;
         void visit(ASTIdentNode&) override;
         void visit(ASTIntConstNode&) override;
+        void visit(ASTTempParentNode&) override;
+        void visit(ASTVariableDeclNode&) override;
 
         void validate_AST() const;
+        void allocate_memory();
 
          ~AssemblyBuilder() = default;
 

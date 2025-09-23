@@ -27,6 +27,7 @@ string AssemblyGenerator::AST_to_assembly_helper(ID::ASTNodeId node_id) {
 
 void AssemblyGenerator::convert_AST_to_assembly() {
     builder.validate_AST();
+    builder.allocate_memory();
     generated_assembly = AST_to_assembly_helper(ast.get_root_id());
 }
 

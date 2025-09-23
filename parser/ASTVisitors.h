@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include <functional>
+
 #include "ASTNodes.h"
 
 class AST;
@@ -17,6 +19,8 @@ class NodeVisitor {
         virtual void visit(ASTTempNode&) = 0;
         virtual void visit(ASTIdentNode&) = 0;
         virtual void visit(ASTIntConstNode&) = 0;
+        virtual void visit(ASTTempParentNode&) = 0;
+        virtual void visit(ASTVariableDeclNode&) = 0;
 
         virtual ~NodeVisitor() = default;
 };
@@ -32,6 +36,8 @@ class ParameterizedNodeVisitor {
         virtual T visit(ASTTempNode&) = 0;
         virtual T visit(ASTIdentNode&) = 0;
         virtual T visit(ASTIntConstNode&) = 0;
+        virtual T visit(ASTTempParentNode&) = 0;
+        virtual T visit(ASTVariableDeclNode&) = 0;
 
         virtual ~ParameterizedNodeVisitor() = default;
 };
@@ -41,6 +47,10 @@ class ASTBuilderVisitor : public NodeVisitor {
         AST& ast;
 
         void erase_children(ASTNode&, AST_NODE_TYPE);
+        void erase_children(ASTNode&, std::function<bool(ID::ASTNodeId)>);
+        void promote_children(ID::ASTNodeId);
+        void promote_children_on_condition(ID::ASTNodeId, std::function<bool(ID::ASTNodeId)>);
+        void promote_children_by_type(AST_NODE_TYPE, ID::ASTNodeId);
     public:
         ASTBuilderVisitor(AST& ast) : ast(ast) {}
 
@@ -52,6 +62,8 @@ class ASTBuilderVisitor : public NodeVisitor {
         void visit(ASTTempNode&) override;
         void visit(ASTIdentNode&) override;
         void visit(ASTIntConstNode&) override;
+        void visit(ASTTempParentNode&) override;
+        void visit(ASTVariableDeclNode&) override;
 
         ~ASTBuilderVisitor() = default;
 };
@@ -70,6 +82,8 @@ class ASTPrinterVisitor : public NodeVisitor {
         void visit(ASTTempNode&) override;
         void visit(ASTIdentNode&) override;
         void visit(ASTIntConstNode&) override;
+        void visit(ASTTempParentNode&) override;
+        void visit(ASTVariableDeclNode&) override;
 
         ~ASTPrinterVisitor() = default;
 };

@@ -45,10 +45,15 @@ class AST {
         void construct_AST_helper(ID::ASTNodeId);
         void print_AST_helper(ID::ASTNodeId, int level);
 
+        ID::ASTNodeId add_node(std::unique_ptr<ASTNode>&&);
+
     public:
         AST(SymbolTable& table, CFG& grammar) : root(Arena<std::unique_ptr<ASTNode>>::invalid_id), symbol_table(table), grammar(grammar) {}
 
         std::unique_ptr<ASTNode>& get_node(ID::ASTNodeId);
+
+        void remove_node(ID::ASTNodeId);
+        void remove_node(ASTNode&);
 
         ID::ASTNodeId get_root_id();
 

@@ -20,6 +20,23 @@ std::unique_ptr<ASTNode>& AST::get_node(ID::ASTNodeId id) {
     return node_arena.get(id);
 }
 
+ID::ASTNodeId AST::add_node(std::unique_ptr<ASTNode>&& new_node) {
+    ID::ASTNodeId id = node_arena.add(std::move(new_node));
+    node_arena.get(id)->id = id;
+    return id;
+}
+
+void AST::remove_node(ID::ASTNodeId node_id) {
+    ID::ASTNodeId parent = get_node(node_id)->parent;
+    for (auto it = get_node(parent)->children.begin(); it != get_node(parent)->children.end();) {
+        if (*it == node_id) {
+            it = get_node(parent)->children.erase(it, it + 1);
+        } else {
+            it++;
+        }
+    }
+}
+
 SymbolTable& AST::get_symbol_table() {
     return symbol_table;
 }
@@ -58,17 +75,20 @@ void AST::construct_AST_from_parse_tree() {
 }
 
 void AST::construct_leaf_node(Token& token, SymbolId symbol, stack<ID::ASTNodeId>& ast_stack) {
+    ID::ASTNodeId id;
     switch (grammar.symbol_arena.get(symbol).corresponding_token) {
         case TOKEN_TYPE::INT_CONST:
-            ast_stack.push(node_arena.add(std::make_unique<ASTIntConstNode>(std::stoi(token.value))));
+            id = add_node(std::make_unique<ASTIntConstNode>(std::stoi(token.value)));
             break;
         case TOKEN_TYPE::IDENTIFIER:
-            ast_stack.push(node_arena.add(std::make_unique<ASTIdentNode>(token.value)));
+            id = add_node(std::make_unique<ASTIdentNode>(token.value));
             break;
         default:
-            ast_stack.push(node_arena.add(std::make_unique<ASTTempNode>(grammar.symbol_arena.get(symbol).symbol, grammar.symbol_arena.get(symbol).corresponding_token)));
+            id = add_node(std::make_unique<ASTTempNode>(grammar.symbol_arena.get(symbol).symbol, grammar.symbol_arena.get(symbol).corresponding_token));
             break;
     }
+
+    ast_stack.push(id);
 }
 
 bool AST::construct_production_node(int production_index, stack<ID::ASTNodeId>& ast_stack) {
@@ -78,15 +98,19 @@ bool AST::construct_production_node(int production_index, stack<ID::ASTNodeId>& 
     ID::ASTNodeId parent_node = Arena<ID::ASTNodeId>::invalid_id;
 
     if (production_symbol == "<root>") {
-        parent_node = node_arena.add(std::make_unique<ASTRootNode>());
+        parent_node = add_node(std::make_unique<ASTRootNode>());
     } else if (production_symbol == "<function>") {
-        parent_node = node_arena.add(std::make_unique<ASTFunctionNode>());
+        parent_node = add_node(std::make_unique<ASTFunctionNode>());
     } else if (production_symbol == "<return>") {
-        parent_node = node_arena.add(std::make_unique<ASTReturnNode>());
+        parent_node = add_node(std::make_unique<ASTReturnNode>());
     } else if (production_symbol == "<type>") {
-        parent_node = node_arena.add(std::make_unique<ASTTypeNode>());
-    } else if (production_symbol == "<binaryop>" || production_symbol == "<binaryopsuffix>") {
-        parent_node = node_arena.add(std::make_unique<ASTBinaryOpNode>());
+        parent_node = add_node(std::make_unique<ASTTypeNode>());
+    } else if (production_symbol == "<binaryop>") {
+        parent_node = add_node(std::make_unique<ASTBinaryOpNode>());
+    } else if (production_symbol == "<variabledeclaration>") {
+        parent_node = add_node(std::make_unique<ASTVariableDeclNode>());
+    } else {
+        parent_node = add_node(std::make_unique<ASTTempParentNode>(production_symbol));
     }
 
     if (parent_node == Arena<ID::ASTNodeId>::invalid_id) {

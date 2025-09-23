@@ -1,9 +1,12 @@
 <root> ::= <function>
-<function> ::= <type> "IDENT" "(" ")" "{" <return> "}"
+<function> ::= <type> "IDENT" "(" ")" "{" <functionbody> "}"
 <type> ::= "INT"
-<return> ::= "RETURN" <returnval> ";"
 <literal> ::= "INT_CONST"
-<binaryoptype> ::= "+"
-<returnval> ::= <literal> <binaryop>
-<binaryop> ::= <binaryoptype> <binaryopsuffix> | "ε"
-<binaryopsuffix> ::= <literal> <binaryop>
+<binaryoptype> ::= "+" | "="
+<functionbody> ::= <statement> <functionbody> | "ε"
+<statement> ::= <return> | <variabledeclaration> | <expression> ";"
+<return> ::= "RETURN" <expression> ";"
+<variabledeclaration> ::= <type> "IDENT" <variabledefinition> ";"
+<variabledefinition> ::= "=" <expression> | "ε"
+<expression> ::= <literal> <binaryop> | "IDENT" <binaryop>
+<binaryop> ::= <binaryoptype> <expression> | "ε"

@@ -1,0 +1,4 @@
+int main() {
+    int int = 3;
+    return int;
+}
