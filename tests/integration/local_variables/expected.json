@@ -1,0 +1,38 @@
+
+{
+    "basic1.c": {
+        "error": false,
+        "returncode": 1
+    },
+    "basic2.c": {
+        "error": false,
+        "returncode": 6
+    },
+    "declaration1.c": {
+        "error": false,
+        "returncode": 0
+    },
+    "declaration2.c": {
+        "error": false,
+        "returncode": 13
+    },
+    "assignment1.c": {
+        "error": false,
+        "returncode": 2
+    },
+    "assignment2.c": {
+        "error": false,
+        "returncode": 9
+    },
+    "varnamestyles.c": {
+        "error": false,
+        "returncode": 62
+    },
+    "doubling.c": {
+        "error": false,
+        "returncode": 16
+    },
+    "keywordasvarname.c": {
+        "error": true
+    }
+}
