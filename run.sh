@@ -19,7 +19,7 @@ while [[ i -le $# ]]; do
     (( i++ ))
 done 
 
-build_exec=compiler
+build_exec=build/compiler
 if [ -f $1 ]; then
     ./$build_exec $1
 
@@ -30,6 +30,8 @@ if [ -f $1 ]; then
         if ! (($compile_only)); then 
             tmp/out
             exit $?
+        else 
+            exit 0
         fi
     else
         echo "Compiler exited with error code $?"
