@@ -26,7 +26,7 @@
     },
     "varnamestyles.c": {
         "error": false,
-        "returncode": 62
+        "returncode": 66
     },
     "doubling.c": {
         "error": false,
@@ -51,6 +51,9 @@
         "error": true
     },
     "redeclaration.c": {
+        "error": true
+    },
+    "invalidvarname1.c": {
         "error": true
     }
 }

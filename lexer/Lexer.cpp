@@ -16,7 +16,9 @@ void Lexer::load_program(const string& source) {
 
     string cur_line;
     while (getline(program_file, cur_line)) {
-        program_data += cur_line;
+        // Manually adding a new line between lines makes it clear
+        // to the lexer that identifiers cannot span multiple olines
+        program_data += cur_line + '\n';
     }
 }
 
@@ -55,11 +57,11 @@ void Lexer::lex() {
             // After the loop, j points to the char after the const number
             // Decrement by one to avoid skipping a character when the for loop increments i
             i = --j;
-        } else if (isalpha(program_data.at(i))) {
+        } else if (isalpha(program_data.at(i)) || program_data.at(i) == '_') {
             string alpha_token;
 
             int j = i;
-            while (j < program_data.length() && isalpha(program_data.at(j))) {
+            while (j < program_data.length() && (isalnum(program_data.at(j)) || program_data.at(j) == '_')) {
                 alpha_token += program_data.at(j);
                 j++;
             }
