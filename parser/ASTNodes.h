@@ -28,11 +28,13 @@ class NodeVisitor;
 enum class BINARY_OP {
     INVALID,
     ADDITION,
+    MULTIPLICATION,
     ASSIGNMENT
 };
 
 static const unordered_map<std::string, BINARY_OP> binary_op_map = {
     {"+", BINARY_OP::ADDITION},
+    {"*", BINARY_OP::MULTIPLICATION},
     {"=", BINARY_OP::ASSIGNMENT}
 };
 

@@ -1,9 +1,3 @@
-int 
-main
-(
-)
-{
-return
-0
-;
+int main() {
+    return 3 + 2 * 4;
 }
