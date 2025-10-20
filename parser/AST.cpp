@@ -3,6 +3,7 @@
 #include <iostream>
 #include <variant>
 #include <algorithm>
+#include <cassert>
 
 #include "AST.h"
 
@@ -18,6 +19,10 @@ ID::ASTNodeId AST::get_root_id() {
 
 std::unique_ptr<ASTNode>& AST::get_node(ID::ASTNodeId id) {
     return node_arena.get(id);
+}
+
+const std::unique_ptr<ASTNode>& AST::get_node(ID::ASTNodeId id) const {
+   return node_arena.get(id);
 }
 
 ID::ASTNodeId AST::add_node(std::unique_ptr<ASTNode>&& new_node) {
@@ -72,6 +77,9 @@ void AST::construct_AST_helper(ID::ASTNodeId node) {
 
 void AST::construct_AST_from_parse_tree() {
     construct_AST_helper(root);
+
+    // Build expression trees after forming the rest of the AST because it makes finding and editing the trees easier to manage
+    build_expression_trees();
 }
 
 void AST::construct_leaf_node(Token& token, SymbolId symbol, stack<ID::ASTNodeId>& ast_stack) {
@@ -219,5 +227,23 @@ void AST::construct_parse_tree(const vector<Token>& token_stream) {
     }
 
     root = ast_stack.top();
+
+}
+
+// Given the root of a expression tree, find the infix notation of the tree, and store it in the infix parameter
+
+/* */
+void AST::get_infix(ID::ASTNodeId node, vector<ID::ASTNodeId>& infix) const {
+
+    // There are only binary operations for now so each node in an expression tree that is not a leaf node should have two children
+
+    assert(get_node(node)->children.size() == 0 || get_node(node)->children.size() == 2);
+
+    get_infix(get_node(node)->children.at(0), infix);
+
+    infix.push_back(node);
+
+    get_infix(get_node(node)->children.at(1), infix);
+
 
 }

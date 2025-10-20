@@ -45,12 +45,16 @@ class AST {
         void construct_AST_helper(ID::ASTNodeId);
         void print_AST_helper(ID::ASTNodeId, int level);
 
+        void build_expression_trees();
+        void get_infix(ID::ASTNodeId, vector<ID::ASTNodeId>&) const;
+
         ID::ASTNodeId add_node(std::unique_ptr<ASTNode>&&);
 
     public:
         AST(SymbolTable& table, CFG& grammar) : root(Arena<std::unique_ptr<ASTNode>>::invalid_id), symbol_table(table), grammar(grammar) {}
 
         std::unique_ptr<ASTNode>& get_node(ID::ASTNodeId);
+        const std::unique_ptr<ASTNode>& get_node(ID::ASTNodeId) const;
 
         void remove_node(ID::ASTNodeId);
         void remove_node(ASTNode&);

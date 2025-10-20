@@ -51,6 +51,7 @@ class ASTBuilderVisitor : public NodeVisitor {
         void promote_children(ID::ASTNodeId);
         void promote_children_on_condition(ID::ASTNodeId, std::function<bool(ID::ASTNodeId)>);
         void promote_children_by_type(AST_NODE_TYPE, ID::ASTNodeId);
+
     public:
         ASTBuilderVisitor(AST& ast) : ast(ast) {}
 
