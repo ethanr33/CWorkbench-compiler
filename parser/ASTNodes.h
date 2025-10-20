@@ -32,10 +32,28 @@ enum class BINARY_OP {
     ASSIGNMENT
 };
 
+enum class OP_ASSOCIATIVITY_TYPE {
+    LTR,
+    RTL
+};
+
 static const unordered_map<std::string, BINARY_OP> binary_op_map = {
     {"+", BINARY_OP::ADDITION},
     {"*", BINARY_OP::MULTIPLICATION},
     {"=", BINARY_OP::ASSIGNMENT}
+};
+
+// Lower precedence number = higher precedence
+const unordered_map<BINARY_OP, uint32_t> op_precedence_map = {
+    {BINARY_OP::MULTIPLICATION, 3},
+    {BINARY_OP::ADDITION, 4},
+    {BINARY_OP::ASSIGNMENT, 14}
+};
+
+const unordered_map<BINARY_OP, OP_ASSOCIATIVITY_TYPE> op_associativity_map = {
+    {BINARY_OP::MULTIPLICATION, OP_ASSOCIATIVITY_TYPE::LTR},
+    {BINARY_OP::ADDITION, OP_ASSOCIATIVITY_TYPE::LTR},
+    {BINARY_OP::ASSIGNMENT, OP_ASSOCIATIVITY_TYPE::RTL}
 };
 
 struct ASTNode {

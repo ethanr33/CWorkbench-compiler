@@ -6,6 +6,7 @@
 #include <cassert>
 
 #include "AST.h"
+#include "../tools/debug.h"
 
 using std::stack;
 using std::variant;
@@ -77,9 +78,7 @@ void AST::construct_AST_helper(ID::ASTNodeId node) {
 
 void AST::construct_AST_from_parse_tree() {
     construct_AST_helper(root);
-
-    // Build expression trees after forming the rest of the AST because it makes finding and editing the trees easier to manage
-    build_expression_trees();
+    construct_expression_trees();
 }
 
 void AST::construct_leaf_node(Token& token, SymbolId symbol, stack<ID::ASTNodeId>& ast_stack) {
@@ -232,18 +231,94 @@ void AST::construct_parse_tree(const vector<Token>& token_stream) {
 
 // Given the root of a expression tree, find the infix notation of the tree, and store it in the infix parameter
 
-/* */
+/**
+ * @brief Given the root of a expression tree, find its infix notation and place it in infix
+ * 
+ * @param node - Root of an expression tree
+ * @param infix - Vector to store nodes in infix order (should be empty)
+ */
 void AST::get_infix(ID::ASTNodeId node, vector<ID::ASTNodeId>& infix) const {
-
     // There are only binary operations for now so each node in an expression tree that is not a leaf node should have two children
 
-    assert(get_node(node)->children.size() == 0 || get_node(node)->children.size() == 2);
+    uint32_t num_children = get_node(node)->children.size();
 
-    get_infix(get_node(node)->children.at(0), infix);
+    assert(num_children == 0 || num_children == 2);
+
+    if (num_children == 2) {
+        get_infix(get_node(node)->children.at(0), infix);
+    }
 
     infix.push_back(node);
 
-    get_infix(get_node(node)->children.at(1), infix);
+    if (num_children == 2) {
+        get_infix(get_node(node)->children.at(1), infix);
+    }
+}
 
+/**
+ * @brief Convert an infix expression to a postfix expression
+ * 
+ * @param infix - Infix expression
+ * @param postfix - Vector to place postfix expression into (should be empty)
+ * 
+ * See https://www.geeksforgeeks.org/dsa/convert-infix-expression-to-postfix-expression/ 
+ * for algorithm details
+ */
+void AST::infix_to_postfix(vector<ID::ASTNodeId>& infix, vector<ID::ASTNodeId>& postfix) const {
+    std::stack<BINARY_OP> op_stack;
 
+    // The nodes corresponding to the operators in op_stack are stored here
+    std::stack<ID::ASTNodeId> node_stack; 
+
+    for (ID::ASTNodeId node : infix) {
+        if (get_node(node)->node_type == AST_NODE_TYPE::BINARY_OP_NODE) {
+            BINARY_OP node_op = dynamic_cast<ASTBinaryOpNode*>(get_node(node).get())->op;
+            OP_ASSOCIATIVITY_TYPE assoc_type = op_associativity_map.at(node_op);
+
+            // If the new operator has a higher precedence than the one at the top of the stack,
+            // then we always push it to the stack
+            if (op_stack.empty() || (op_precedence_map.at(op_stack.top()) > op_precedence_map.at(node_op))) {
+                op_stack.push(node_op);
+                node_stack.push(node);
+            } else if (op_precedence_map.at(op_stack.top()) == op_precedence_map.at(node_op) && assoc_type == OP_ASSOCIATIVITY_TYPE::RTL) {
+                op_stack.push(node_op);
+                node_stack.push(node);
+            } else {
+                while (!op_stack.empty()) {
+                    postfix.push_back(node_stack.top());
+                    op_stack.pop();
+                    node_stack.pop();
+                }
+            }
+        } else {
+            postfix.push_back(node);
+        }
+    }
+
+    while (!op_stack.empty()) {
+        op_stack.pop();
+        postfix.push_back(node_stack.top());
+        node_stack.pop();
+    }
+
+}
+
+void AST::construct_expression_trees() {
+    construct_expression_trees_helper(root);
+}
+
+void AST::construct_expression_trees_helper(ID::ASTNodeId node) {
+    if (get_node(node)->node_type == AST_NODE_TYPE::BINARY_OP_NODE) {
+        vector<ID::ASTNodeId> infix;
+        get_infix(node, infix);
+
+        vector<ID::ASTNodeId> postfix;
+        infix_to_postfix(infix, postfix);
+
+        print_vector("Postfix", postfix);
+    } else {
+        for (ID::ASTNodeId child : get_node(node)->children) {
+            construct_expression_trees_helper(child);
+        }
+    }
 }

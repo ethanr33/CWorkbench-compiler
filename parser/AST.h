@@ -45,8 +45,9 @@ class AST {
         void construct_AST_helper(ID::ASTNodeId);
         void print_AST_helper(ID::ASTNodeId, int level);
 
-        void build_expression_trees();
+        void construct_expression_trees_helper(ID::ASTNodeId);
         void get_infix(ID::ASTNodeId, vector<ID::ASTNodeId>&) const;
+        void infix_to_postfix(vector<ID::ASTNodeId>&, vector<ID::ASTNodeId>&) const;
 
         ID::ASTNodeId add_node(std::unique_ptr<ASTNode>&&);
 
@@ -63,6 +64,8 @@ class AST {
 
         SymbolTable& get_symbol_table();
         const SymbolTable& get_symbol_table() const;
+
+        void construct_expression_trees();
 
         void construct_parse_tree(const vector<Token>&);
         void construct_AST_from_parse_tree();
