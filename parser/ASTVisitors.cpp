@@ -141,11 +141,6 @@ void ASTBuilderVisitor::visit(ASTBinaryOpNode& node) {
         }
     });
 
-    // if (node.children.size() == 2) {
-    //     if (ast.get_node(node.children.at(0))->node_type == AST_NODE_TYPE::INT_CONST_NODE && ast.get_node(node.children.at(1))->node_type == AST_NODE_TYPE::BINARY_OP_NODE) {
-    //         std::swap(node.children.at(0), node.children.at(1));
-    //     }
-    // }
 }
 
 void ASTBuilderVisitor::visit(ASTTempNode& node) {
@@ -252,45 +247,45 @@ void ASTBuilderVisitor::visit(ASTVariableDeclNode& node) {
 }
 
 void ASTPrinterVisitor::visit(ASTRootNode& node) {
-    std::cout << "Root" << std::endl;
+    std::cout << "(" << node.id << ") " << "Root" << std::endl;
 }
 
 void ASTPrinterVisitor::visit(ASTFunctionNode& node) {
-    std::cout << "Function" << std::endl;
+    std::cout << "(" << node.id << ") " << "Function" << std::endl;
 }
 
 void ASTPrinterVisitor::visit(ASTReturnNode& node) {
-    std::cout << "Return" << std::endl;
+    std::cout << "(" << node.id << ") " << "Return" << std::endl;
 }
 
 void ASTPrinterVisitor::visit(ASTTypeNode& node) {
-    std::cout << "Type" << std::endl;
+    std::cout << "(" << node.id << ") " << "Type" << std::endl;
 }
 
 void ASTPrinterVisitor::visit(ASTBinaryOpNode& node) {
-    std::cout << "Binary op " << static_cast<uint32_t>(node.op) << std::endl;
+    std::cout << "(" << node.id << ") " << "Binary op " << static_cast<uint32_t>(node.op) << std::endl;
 }
 
 void ASTPrinterVisitor::visit(ASTTempNode& node) {
-    std::cout << "Temp " << node.data << std::endl;
+    std::cout << "(" << node.id << ") " << "Temp " << node.data << std::endl;
 }
 
 void ASTPrinterVisitor::visit(ASTIdentNode& node) {
-    std::cout << "Ident " << node.identifier << std::endl;
+    std::cout << "(" << node.id << ") " << "Ident " << node.identifier << std::endl;
 }
 
 void ASTPrinterVisitor::visit(ASTIntConstNode& node) {
-    std::cout << "Int const " << node.value << std::endl;
+    std::cout << "(" << node.id << ") " << "Int const " << node.value << std::endl;
 }
 
 void ASTPrinterVisitor::visit(ASTTempParentNode& node) {
-    std::cout << "Temp parent " << node.symbol << std::endl;
+    std::cout << "(" << node.id << ") " << "Temp parent " << node.symbol << std::endl;
 }
 
 void ASTPrinterVisitor::visit(ASTVariableDeclNode& node) {
     if (node.defines_here) {
-        std::cout << "Variable definition" << std::endl;
+        std::cout << "(" << node.id << ") " << "Variable definition" << std::endl;
     } else {
-        std::cout << "Variable declaration" << std::endl;
+        std::cout << "(" << node.id << ") " << "Variable declaration" << std::endl;
     }
 }

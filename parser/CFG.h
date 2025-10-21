@@ -33,7 +33,8 @@ const std::unordered_map<std::string, TOKEN_TYPE> TERMINAL_MAP = {
     {"=",         TOKEN_TYPE::EQUALS},
     {"$",         TOKEN_TYPE::END_OF_INPUT},
     {"ε",         TOKEN_TYPE::EPSILON},
-    {"+",         TOKEN_TYPE::PLUS}
+    {"+",         TOKEN_TYPE::PLUS},
+    {"*",         TOKEN_TYPE::ASTERISK}
 };
 
 /**
