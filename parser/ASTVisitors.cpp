@@ -141,13 +141,6 @@ void ASTBuilderVisitor::visit(ASTBinaryOpNode& node) {
         }
     });
 
-    // If the parent of this node is not a binary op, then this node is the root of a expression tree. Let's calculate the postfix expression, and turn it into a tree
-    // In the postfix tree, the expression is evaluated in a postorder traversal
-
-    if (ast.get_node(node.parent)->node_type != AST_NODE_TYPE::BINARY_OP_NODE) {
-        // This is the root of a expression tree, so find the postorder expression
-        vector<ID::ASTNodeId> postorder;
-    }
 }
 
 void ASTBuilderVisitor::visit(ASTTempNode& node) {

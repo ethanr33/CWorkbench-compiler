@@ -349,21 +349,16 @@ void AST::construct_expression_trees() {
 
 void AST::construct_expression_trees_helper(ID::ASTNodeId node) {
     if (get_node(node)->node_type == AST_NODE_TYPE::BINARY_OP_NODE) {
-        // std::cout << "Before:" << std::endl;
-        // print_AST();
 
         vector<ID::ASTNodeId> infix;
         get_infix(node, infix);
 
-        // print_vector("Infix", infix);
-
         vector<ID::ASTNodeId> postfix;
         infix_to_postfix(infix, postfix);
 
-        // print_vector("Postfix", postfix);
-
         ID::ASTNodeId node_parent = get_node(node)->parent;
 
+        // node is guaranteed to be a child of parent so there's no need to check for existence
         auto node_pos_it = std::find(get_node(node_parent)->children.begin(), get_node(node_parent)->children.end(), node);
 
         remove_node(node);
