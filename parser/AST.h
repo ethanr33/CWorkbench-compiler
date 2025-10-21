@@ -47,7 +47,8 @@ class AST {
 
         void construct_expression_trees_helper(ID::ASTNodeId);
         void get_infix(ID::ASTNodeId, vector<ID::ASTNodeId>&) const;
-        void infix_to_postfix(vector<ID::ASTNodeId>&, vector<ID::ASTNodeId>&) const;
+        void infix_to_postfix(const vector<ID::ASTNodeId>&, vector<ID::ASTNodeId>&) const;
+        ID::ASTNodeId generate_tree_from_postfix(const vector<ID::ASTNodeId>&);
 
         ID::ASTNodeId add_node(std::unique_ptr<ASTNode>&&);
 

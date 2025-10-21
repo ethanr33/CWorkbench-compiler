@@ -11,3 +11,4 @@ test0.cpp
 *.asm
 *.pyc
 Testing/
+test0.c

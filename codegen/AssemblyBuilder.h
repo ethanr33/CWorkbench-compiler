@@ -39,6 +39,13 @@ class AssemblyBuilder : public NodeVisitor {
 
         MemoryAllocator allocator;
 
+        // Maps from binary operation to x86 assembly instruction for certain binary operations (arithmetic ones for now)
+        // The operations here are meant to be used in two-operand form
+        const std::unordered_map<BINARY_OP, string> op_to_assembly_map = {
+            {BINARY_OP::ADDITION, "add"},
+            {BINARY_OP::MULTIPLICATION, "imul"}
+        };
+
         std::unordered_map<Register, string> register_keyword_map = {
             {Register::RAX, "rax"},
             {Register::R12, "r12"}

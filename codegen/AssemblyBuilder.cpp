@@ -103,40 +103,7 @@ void AssemblyBuilder::visit(ASTBinaryOpNode& node) {
 
     assert(node.op != BINARY_OP::INVALID);
 
-    switch (node.op) {
-        case BINARY_OP::ADDITION:
-            if (std::get_if<int>(&operand_stack.top())) {
-                generated_assembly_epilog += std::format("mov r12, {:d}\n", std::get<int>(operand_stack.top()));
-            } else if (std::get_if<string>(&operand_stack.top())) {
-                uint32_t offset = symbol_table.get_by_identifier(std::get<string>(operand_stack.top())).offset;
-                generated_assembly_epilog += std::format("mov r12, [rbp-{:d}]\n", offset);  
-            } else if (std::get_if<Register>(&operand_stack.top())) {
-                Register reg = std::get<Register>(operand_stack.top());
-                generated_assembly_epilog += std::format("mov r12, {}\n", register_keyword_map.at(reg));
-            }     
-
-            operand_stack.pop();
-            
-            if (std::get_if<int>(&operand_stack.top())) {
-                generated_assembly_epilog += std::format("mov r13, {:d}\n", std::get<int>(operand_stack.top()));
-            } else if (std::get_if<string>(&operand_stack.top())) {
-                uint32_t offset = symbol_table.get_by_identifier(std::get<string>(operand_stack.top())).offset;
-                generated_assembly_epilog += std::format("mov r13, [rbp-{:d}]\n", offset);  
-            } else if (std::get_if<Register>(&operand_stack.top())) {
-                Register reg = std::get<Register>(operand_stack.top());
-                generated_assembly_epilog += std::format("mov r13, {}\n", register_keyword_map.at(reg));
-            }    
-
-            operand_stack.pop();
-
-            generated_assembly_epilog += "mov rax, 0\n";
-            generated_assembly_epilog += "add rax, r12\n";
-            generated_assembly_epilog += "add rax, r13\n";
-
-            operand_stack.push(Register::RAX);
-
-            break;
-        case BINARY_OP::ASSIGNMENT:
+    if (node.op == BINARY_OP::ASSIGNMENT) {
             // Assignment is a special binary op case, because we need to get the identifier to assign to
 
             std::variant<int, string, Register> rhs = operand_stack.top();
@@ -163,9 +130,46 @@ void AssemblyBuilder::visit(ASTBinaryOpNode& node) {
             }     
 
             operand_stack.pop();
+    } else {
+        if (std::get_if<int>(&operand_stack.top())) {
+            generated_assembly_epilog += std::format("mov r12, {:d}\n", std::get<int>(operand_stack.top()));
+        } else if (std::get_if<string>(&operand_stack.top())) {
+            uint32_t offset = symbol_table.get_by_identifier(std::get<string>(operand_stack.top())).offset;
+            generated_assembly_epilog += std::format("mov r12, [rbp-{:d}]\n", offset);  
+        } else if (std::get_if<Register>(&operand_stack.top())) {
+            Register reg = std::get<Register>(operand_stack.top());
+            generated_assembly_epilog += std::format("mov r12, {}\n", register_keyword_map.at(reg));
+        }     
 
-            break;
+        operand_stack.pop();
+        
+        if (std::get_if<int>(&operand_stack.top())) {
+            generated_assembly_epilog += std::format("mov r13, {:d}\n", std::get<int>(operand_stack.top()));
+        } else if (std::get_if<string>(&operand_stack.top())) {
+            uint32_t offset = symbol_table.get_by_identifier(std::get<string>(operand_stack.top())).offset;
+            generated_assembly_epilog += std::format("mov r13, [rbp-{:d}]\n", offset);  
+        } else if (std::get_if<Register>(&operand_stack.top())) {
+            Register reg = std::get<Register>(operand_stack.top());
+            generated_assembly_epilog += std::format("mov r13, {}\n", register_keyword_map.at(reg));
+        }    
+
+        operand_stack.pop();
+
+        string assembly_instruction = op_to_assembly_map.at(node.op);
+
+        // Multiplication needs the initial value of rax to be 1, otherwise the result will always be 0
+        if (node.op == BINARY_OP::MULTIPLICATION) {
+            generated_assembly_epilog += "mov rax, 1\n";
+        } else {
+            generated_assembly_epilog += "mov rax, 0\n";
+        }
+
+        generated_assembly_epilog += std::format("{} rax, r12\n", assembly_instruction);
+        generated_assembly_epilog += std::format("{} rax, r13\n", assembly_instruction);
+
+        operand_stack.push(Register::RAX);  
     }
+
 }
 
 void AssemblyBuilder::visit(ASTTempNode& node) {

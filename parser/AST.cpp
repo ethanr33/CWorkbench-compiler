@@ -264,7 +264,7 @@ void AST::get_infix(ID::ASTNodeId node, vector<ID::ASTNodeId>& infix) const {
  * See https://www.geeksforgeeks.org/dsa/convert-infix-expression-to-postfix-expression/ 
  * for algorithm details
  */
-void AST::infix_to_postfix(vector<ID::ASTNodeId>& infix, vector<ID::ASTNodeId>& postfix) const {
+void AST::infix_to_postfix(const vector<ID::ASTNodeId>& infix, vector<ID::ASTNodeId>& postfix) const {
     std::stack<BINARY_OP> op_stack;
 
     // The nodes corresponding to the operators in op_stack are stored here
@@ -289,6 +289,9 @@ void AST::infix_to_postfix(vector<ID::ASTNodeId>& infix, vector<ID::ASTNodeId>& 
                     op_stack.pop();
                     node_stack.pop();
                 }
+
+                node_stack.push(node);
+                op_stack.push(node_op);
             }
         } else {
             postfix.push_back(node);
@@ -303,19 +306,71 @@ void AST::infix_to_postfix(vector<ID::ASTNodeId>& infix, vector<ID::ASTNodeId>& 
 
 }
 
+/**
+ * @brief Given the postfix for a tree, return the root of the new tree with operator precedence represented
+ *        Traversing the new tree in postfix order will come up with the correct result
+ * 
+ * @param postfix - vector of nodes representing postfix notation of a expression tree
+ * 
+ * @return root node of the new expression tree
+ */
+ID::ASTNodeId AST::generate_tree_from_postfix(const vector<ID::ASTNodeId>& postfix) {
+    stack<ID::ASTNodeId> node_stack;
+
+    // Clean postfix nodes by removing children
+
+    for (ID::ASTNodeId node : postfix) {
+        get_node(node)->children.clear();
+    }
+
+    for (ID::ASTNodeId node : postfix) {
+        if (get_node(node)->node_type == AST_NODE_TYPE::BINARY_OP_NODE) {
+            ID::ASTNodeId rhs = node_stack.top();
+            node_stack.pop();
+
+            ID::ASTNodeId lhs = node_stack.top();
+            node_stack.pop();
+
+            get_node(node)->children.push_back(lhs);
+            get_node(node)->children.push_back(rhs);
+
+            node_stack.push(node);
+        } else {
+            node_stack.push(node);
+        }
+    }
+
+    return node_stack.top();
+}
+
 void AST::construct_expression_trees() {
     construct_expression_trees_helper(root);
 }
 
 void AST::construct_expression_trees_helper(ID::ASTNodeId node) {
     if (get_node(node)->node_type == AST_NODE_TYPE::BINARY_OP_NODE) {
+        // std::cout << "Before:" << std::endl;
+        // print_AST();
+
         vector<ID::ASTNodeId> infix;
         get_infix(node, infix);
+
+        // print_vector("Infix", infix);
 
         vector<ID::ASTNodeId> postfix;
         infix_to_postfix(infix, postfix);
 
-        print_vector("Postfix", postfix);
+        // print_vector("Postfix", postfix);
+
+        ID::ASTNodeId node_parent = get_node(node)->parent;
+
+        auto node_pos_it = std::find(get_node(node_parent)->children.begin(), get_node(node_parent)->children.end(), node);
+
+        remove_node(node);
+
+        ID::ASTNodeId new_root = generate_tree_from_postfix(postfix);
+
+        get_node(node_parent)->children.insert(node_pos_it, new_root);
     } else {
         for (ID::ASTNodeId child : get_node(node)->children) {
             construct_expression_trees_helper(child);
