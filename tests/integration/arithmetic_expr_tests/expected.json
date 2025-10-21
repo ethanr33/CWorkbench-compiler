@@ -1,20 +1,36 @@
 
 {
-    "twonumbers.c": {
+    "addtwonumbers.c": {
         "error": false,
         "returncode": 3
     },
-    "threenumbers.c" : {
+    "addthreenumbers.c" : {
         "error": false,
         "returncode": 6
     },
-    "manynumbers.c" : {
+    "addmanynumbers.c" : {
         "error": false,
         "returncode": 55
     },
     "isolatedexpr.c" : {
         "error": false,
         "returncode": 10
+    },
+    "multtwonumbers.c" : {
+        "error": false,
+        "returncode": 35
+    },
+    "multthreenumbers.c" : {
+        "error": false,
+        "returncode": 70
+    },
+    "basicprecedence1.c" : {
+        "error": false,
+        "returncode": 21
+    },
+    "basicprecedence2.c" : {
+        "error": false,
+        "returncode": 11
     },
     "missingoperandright.c" : {
         "error": true
