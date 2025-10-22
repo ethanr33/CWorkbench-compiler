@@ -12,6 +12,18 @@
         "error": false,
         "returncode": 55
     },
+    "subtwonumbers.c": {
+        "error": false,
+        "returncode": 5
+    },
+    "subthreenumbers.c": {
+        "error": false,
+        "returncode": 7
+    },
+    "submanynumbers.c" : {
+        "error": false,
+        "returncode": 17
+    },
     "isolatedexpr.c" : {
         "error": false,
         "returncode": 10
@@ -31,6 +43,10 @@
     "basicprecedence2.c" : {
         "error": false,
         "returncode": 11
+    },
+    "basicprecedence3.c" : {
+        "error": false,
+        "returncode": 4
     },
     "missingoperandright.c" : {
         "error": true
