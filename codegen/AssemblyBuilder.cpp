@@ -164,8 +164,16 @@ void AssemblyBuilder::visit(ASTBinaryOpNode& node) {
             generated_assembly_epilog += "mov rax, 0\n";
         }
 
-        generated_assembly_epilog += std::format("{} rax, r12\n", assembly_instruction);
-        generated_assembly_epilog += std::format("{} rax, r13\n", assembly_instruction);
+        // If the operator is commutative, it doesn't really matter in what order the operands are combined together
+        // However if the operator isn't commutative, we can't really specify an initial value for rax, and so rax should be set to the rhs of the operation (r13)
+        if (!op_commutativity_map.at(node.op)) {
+            // r13 is the second value popped and is the rhs of the operation, so we apply the operation r13 OP r12
+            generated_assembly_epilog += std::format("mov rax, r13\n");
+            generated_assembly_epilog += std::format("{} rax, r12\n", assembly_instruction);
+        } else {
+            generated_assembly_epilog += std::format("{} rax, r12\n", assembly_instruction);
+            generated_assembly_epilog += std::format("{} rax, r13\n", assembly_instruction);
+        }
 
         operand_stack.push(Register::RAX);  
     }

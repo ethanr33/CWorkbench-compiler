@@ -43,6 +43,7 @@ class AssemblyBuilder : public NodeVisitor {
         // The operations here are meant to be used in two-operand form
         const std::unordered_map<BINARY_OP, string> op_to_assembly_map = {
             {BINARY_OP::ADDITION, "add"},
+            {BINARY_OP::SUBTRACTION, "sub"},
             {BINARY_OP::MULTIPLICATION, "imul"}
         };
 

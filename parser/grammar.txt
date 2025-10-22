@@ -2,7 +2,7 @@
 <function> ::= <type> "IDENT" "(" ")" "{" <functionbody> "}"
 <type> ::= "INT"
 <literal> ::= "INT_CONST"
-<binaryoptype> ::= "+" | "*" | "="
+<binaryoptype> ::= "+" | "-" | "*" | "="
 <functionbody> ::= <statement> <functionbody> | "ε"
 <statement> ::= <return> | <variabledeclaration> | <expression> ";"
 <return> ::= "RETURN" <expression> ";"
