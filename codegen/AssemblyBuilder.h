@@ -4,8 +4,6 @@
 
 #include "../parser/ASTVisitors.h"
 
-enum class Register { RAX, R12 };
-
 class MemoryAllocator : public NodeVisitor {
     private:
         AST& ast;
@@ -45,11 +43,6 @@ class AssemblyBuilder : public NodeVisitor {
             {BINARY_OP::ADDITION, "add"},
             {BINARY_OP::SUBTRACTION, "sub"},
             {BINARY_OP::MULTIPLICATION, "imul"}
-        };
-
-        std::unordered_map<Register, string> register_keyword_map = {
-            {Register::RAX, "rax"},
-            {Register::R12, "r12"}
         };
 
         bool has_valid_entry_point() const;
