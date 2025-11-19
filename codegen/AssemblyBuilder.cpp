@@ -83,6 +83,8 @@ void AssemblyBuilder::visit(ASTFunctionNode& node) {
 void AssemblyBuilder::visit(ASTReturnNode& node) {
     clear_generated_assembly();
 
+    generated_assembly_epilog += std::format("mov rax, {}\n", allocator.get_access_string());
+
     if (std::get_if<int>(&operand_stack.top())) {
         generated_assembly_epilog = std::format("mov rax, {:d}\n", std::get<int>(operand_stack.top()));
     } else if (std::get_if<string>(&operand_stack.top())) {
@@ -106,7 +108,7 @@ void AssemblyBuilder::visit(ASTBinaryOpNode& node) {
     if (node.op == BINARY_OP::ASSIGNMENT) {
             // Assignment is a special binary op case, because we need to get the identifier to assign to
 
-            std::variant<int, string, Register> rhs = operand_stack.top();
+            ID::SlotId rhs = operand_stack.top();
 
             operand_stack.pop();
 
@@ -187,8 +189,6 @@ void AssemblyBuilder::visit(ASTTempNode& node) {
 void AssemblyBuilder::visit(ASTIdentNode& node) {
     clear_generated_assembly();
 
-    uint32_t offset = symbol_table.get_by_identifier(node.identifier).offset;
-
     AST_NODE_TYPE parent_type = ast.get_node(node.parent)->node_type;
     switch (parent_type) {
         case AST_NODE_TYPE::RETURN_NODE:
@@ -209,21 +209,9 @@ void AssemblyBuilder::visit(ASTIdentNode& node) {
 void AssemblyBuilder::visit(ASTIntConstNode& node) {
     clear_generated_assembly();
 
-    AST_NODE_TYPE parent_type = ast.get_node(node.parent)->node_type;
-    switch (parent_type) {
-        case AST_NODE_TYPE::RETURN_NODE:
-            operand_stack.push(node.value);
-            break;
-        case AST_NODE_TYPE::BINARY_OP_NODE:
-            operand_stack.push(node.value);
-            break;
-        case AST_NODE_TYPE::VARIABLE_DECL_NODE:
-            operand_stack.push(node.value);
-            break;
-        default:
-            throw std::runtime_error(std::format("Invalid node arrangement: INT_CONST node is a child of {:d}",  std::to_underlying(parent_type)));
-            break;
-    }
+    // Ints are always 4 bytes
+    ID::SlotId temp_slot_id = allocator.add_temporary(4);
+    operand_stack.push(temp_slot_id);
 }
 
 void AssemblyBuilder::visit(ASTTempParentNode& node) {
@@ -233,30 +221,5 @@ void AssemblyBuilder::visit(ASTTempParentNode& node) {
 void AssemblyBuilder::visit(ASTVariableDeclNode& node) {
     clear_generated_assembly();
 
-    if (!node.defines_here) {
-        generated_assembly_epilog += "push 0\n";
-        operand_stack.pop(); // If there is no definition, there should only be one child that can be popped
-    } else {
-        if (std::get_if<int>(&operand_stack.top())) {
-            generated_assembly_epilog += std::format("push {:d}\n", std::get<int>(operand_stack.top()));
-        } else if (std::get_if<string>(&operand_stack.top())) {
-            uint32_t offset = symbol_table.get_by_identifier(std::get<string>(operand_stack.top())).offset;
-            generated_assembly_epilog += std::format("mov r14, [rbp-{:d}]\n", offset);  
-            generated_assembly_epilog += "push r14\n";  
-        } else if (std::get_if<Register>(&operand_stack.top())) {
-            Register reg = std::get<Register>(operand_stack.top());
-            generated_assembly_epilog += std::format("push {}\n", register_keyword_map.at(reg));
-        }
-        operand_stack.pop();
-        operand_stack.pop();
-        // If there is a definition, there should be a child for the LHS and RHS, both need to be popped
-    }
-
-}
-
-void MemoryAllocator::visit(ASTVariableDeclNode& node) {
-    assert(ast.get_node(node.children.at(0))->node_type == AST_NODE_TYPE::IDENT_NODE);
-
-    max_stack_offset += 8;
-    symbol_table.get_by_node_id(node.id).offset = max_stack_offset;
+    allocator.add_variable_to_stack(symbol_table.get_by_node_id(node.id).table_id, 4);
 }

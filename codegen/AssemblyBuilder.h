@@ -2,17 +2,17 @@
 #include <variant>
 #include <stack>
 
+#include "SlotAllocator.h"
 #include "../parser/ASTVisitors.h"
 
 class MemoryAllocator : public NodeVisitor {
     private:
         AST& ast;
         SymbolTable& symbol_table;
-
-        uint32_t max_stack_offset = 0;
+        SlotAllocator& allocator;
     public:
 
-        MemoryAllocator(AST& ast, SymbolTable& table) : ast(ast), symbol_table(table) {}
+        MemoryAllocator(AST& ast, SymbolTable& table, SlotAllocator& allocator) : ast(ast), symbol_table(table), allocator(allocator) {}
 
         void visit(ASTRootNode&) override {};
         void visit(ASTFunctionNode&) override {};
@@ -35,7 +35,7 @@ class AssemblyBuilder : public NodeVisitor {
         AST& ast;
         SymbolTable& symbol_table;
 
-        MemoryAllocator allocator;
+        SlotAllocator allocator;
 
         // Maps from binary operation to x86 assembly instruction for certain binary operations (arithmetic ones for now)
         // The operations here are meant to be used in two-operand form
@@ -50,11 +50,11 @@ class AssemblyBuilder : public NodeVisitor {
 
         void allocate_memory_helper(ID::ASTNodeId);
 
-        std::stack<std::variant<int, std::string, Register>> operand_stack;
+        std::stack<ID::SlotId> operand_stack;
         
     public:
 
-        AssemblyBuilder(AST& ast, SymbolTable& table) : ast(ast), symbol_table(table), allocator(ast, symbol_table) {}
+        AssemblyBuilder(AST& ast, SymbolTable& table) : ast(ast), symbol_table(table), allocator() {}
 
         const string& get_prolog() const;
         const string& get_body() const;

@@ -1,31 +1,41 @@
 
-#include <unordered_set>
+#include <unordered_map>
+#include <memory>
 
 #include "Slot.h"
+
+enum class REGISTER_STATUS { FREE, IN_USE };
 
 // Manages the storing of values in registers / stack
 class SlotAllocator {
     private:
-        std::unordered_set<REGISTER> free_registers = {
-            REGISTER::R8,
-            REGISTER::R9,
-            REGISTER::R10,
-            REGISTER::R11,
-            REGISTER::R12,
-            REGISTER::R13,
-            REGISTER::R14,
-            REGISTER::R15
+        const std::unordered_map<REGISTER, REGISTER_STATUS> register_statuses = {
+            {REGISTER::R8, REGISTER_STATUS::FREE},
+            {REGISTER::R9, REGISTER_STATUS::FREE},
+            {REGISTER::R10, REGISTER_STATUS::FREE},
+            {REGISTER::R11, REGISTER_STATUS::FREE},
+            {REGISTER::R12, REGISTER_STATUS::FREE},
+            {REGISTER::R13, REGISTER_STATUS::FREE},
+            {REGISTER::R14, REGISTER_STATUS::FREE},
+            {REGISTER::R15, REGISTER_STATUS::FREE}
         };
 
-        Arena<Slot> slots;
+        Arena<std::unique_ptr<Slot>> slots;
+
+        // Next available location to store in stack memory
+        uint32_t next_available_stack_pos;
+
+        ID::SlotId add_temp_to_stack(int size);
     public:
-        // Returns the index of a free slot to store a value in
+        SlotAllocator() : next_available_stack_pos(0) {}
+
+        // Returns the index of a free slot to store a temporary value in
         // Prioritizes using free registers first, then stack memory
-        ID::SlotId add();
+        ID::SlotId add_temporary(int size);
 
         // Returns the index of a free slot to store a value in
-        // Always adds to stack memory
-        ID::SlotId add_to_stack();
+        // Always adds to stack memory (used for variables)
+        ID::SlotId add_variable_to_stack(ID::SymbolTableId, int size);
 
         // Returns assembly code to access the value
         // For registers this is the name of the register

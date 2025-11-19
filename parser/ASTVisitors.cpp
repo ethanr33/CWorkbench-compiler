@@ -150,13 +150,12 @@ void ASTBuilderVisitor::visit(ASTTempNode& node) {
 void ASTBuilderVisitor::visit(ASTIdentNode& node) {
     switch (ast.get_node(node.parent)->node_type) {
         case AST_NODE_TYPE::FUNCTION_NODE:
-            ast.get_symbol_table().add_function(node.parent, node.identifier);
             break;
         case AST_NODE_TYPE::VARIABLE_DECL_NODE:
             if (ast.get_symbol_table().has_identifier(node.identifier)) {
                 throw std::runtime_error("Redeclaration of variable " + node.identifier);
             } else {
-                ast.get_symbol_table().add_variable(node.parent, node.identifier);
+                ID::SymbolTableId variable_id = ast.get_symbol_table().add_variable(node.parent, node.identifier);
             }
 
             break;
