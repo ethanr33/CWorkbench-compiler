@@ -4,15 +4,17 @@
 #include <string>
 #include <unordered_map>
 
-#include "SlotAllocator.h"
 #include "../tools/memory.h"
 
+enum class ENTRY_TYPE { VARIABLE, FUNCTION };
+
 struct SymbolTableEntry {
+    ENTRY_TYPE entry_type;
     std::string identifier;
     ID::ASTNodeId node_id;
     ID::SymbolTableId table_id;
 
-    SymbolTableEntry(const std::string& identifier, ID::ASTNodeId node_id) : identifier(identifier), node_id(node_id) {}
+    SymbolTableEntry(const std::string& identifier, ID::ASTNodeId node_id, ENTRY_TYPE type) : identifier(identifier), node_id(node_id), entry_type(type) {}
 };
 
 class SymbolTable {
@@ -23,8 +25,8 @@ class SymbolTable {
     public:
         static constexpr ID::SymbolTableId invalid_entry = -1;
 
-        // size: specifies size of variable in bytes
-        ID::SymbolTableId add_variable(ID::ASTNodeId, const std::string& string);
+        ID::SymbolTableId add_variable(ID::ASTNodeId, const std::string&);
+        ID::SymbolTableId add_function(ID::ASTNodeId, const std::string&);
 
         bool has_identifier(const std::string&) const;
 

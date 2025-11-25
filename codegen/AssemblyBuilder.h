@@ -5,27 +5,6 @@
 #include "SlotAllocator.h"
 #include "../parser/ASTVisitors.h"
 
-class MemoryAllocator : public NodeVisitor {
-    private:
-        AST& ast;
-        SymbolTable& symbol_table;
-        SlotAllocator& allocator;
-    public:
-
-        MemoryAllocator(AST& ast, SymbolTable& table, SlotAllocator& allocator) : ast(ast), symbol_table(table), allocator(allocator) {}
-
-        void visit(ASTRootNode&) override {};
-        void visit(ASTFunctionNode&) override {};
-        void visit(ASTReturnNode&) override {};
-        void visit(ASTTypeNode&) override {};
-        void visit(ASTBinaryOpNode&) override {};
-        void visit(ASTTempNode&) override {};
-        void visit(ASTIdentNode&) override {};
-        void visit(ASTIntConstNode&) override {};
-        void visit(ASTTempParentNode&) override {}
-        void visit(ASTVariableDeclNode&) override;
-};
-
 class AssemblyBuilder : public NodeVisitor {
     private:
         string generated_assembly_prolog;
@@ -47,8 +26,6 @@ class AssemblyBuilder : public NodeVisitor {
 
         bool has_valid_entry_point() const;
         void clear_generated_assembly();
-
-        void allocate_memory_helper(ID::ASTNodeId);
 
         std::stack<ID::SlotId> operand_stack;
         
@@ -72,7 +49,6 @@ class AssemblyBuilder : public NodeVisitor {
         void visit(ASTVariableDeclNode&) override;
 
         void validate_AST() const;
-        void allocate_memory();
 
          ~AssemblyBuilder() = default;
 

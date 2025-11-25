@@ -150,6 +150,7 @@ void ASTBuilderVisitor::visit(ASTTempNode& node) {
 void ASTBuilderVisitor::visit(ASTIdentNode& node) {
     switch (ast.get_node(node.parent)->node_type) {
         case AST_NODE_TYPE::FUNCTION_NODE:
+            ast.get_symbol_table().add_variable(node.parent, node.identifier);
             break;
         case AST_NODE_TYPE::VARIABLE_DECL_NODE:
             if (ast.get_symbol_table().has_identifier(node.identifier)) {

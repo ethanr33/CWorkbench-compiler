@@ -1,4 +1,6 @@
 
+#pragma once
+
 #include <string>
 #include <unordered_map>
 #include <format>
@@ -9,19 +11,6 @@
 enum class LOCATION_TYPE { REGISTER, STACK };
 enum class REGISTER { RAX, R8, R9, R10, R11, R12, R13, R14, R15 };
 
-// Map register type enum to its keyword in x86-64 asm
-std::unordered_map<REGISTER, std::string> register_keyword_map = {
-    {REGISTER::RAX, "rax"},
-    {REGISTER::R8, "r8"},
-    {REGISTER::R9, "r9"},
-    {REGISTER::R10, "r10"},
-    {REGISTER::R11, "r11"},
-    {REGISTER::R12, "r12"},
-    {REGISTER::R13, "r13"},
-    {REGISTER::R14, "r14"},
-    {REGISTER::R15, "r15"}
-};
-
 // Class to represent a area in memory/registers where a value lives
 class Slot {
     private:
@@ -29,9 +18,30 @@ class Slot {
         LOCATION_TYPE location;
         // How big is the value (in bytes)
         int size;
+    protected:
+        // Map register type enum to its keyword in x86-64 asm
+        const std::unordered_map<REGISTER, std::string> register_keyword_map = {
+            {REGISTER::RAX, "rax"},
+            {REGISTER::R8, "r8"},
+            {REGISTER::R9, "r9"},
+            {REGISTER::R10, "r10"},
+            {REGISTER::R11, "r11"},
+            {REGISTER::R12, "r12"},
+            {REGISTER::R13, "r13"},
+            {REGISTER::R14, "r14"},
+            {REGISTER::R15, "r15"}
+        };
     public:
 
         Slot(LOCATION_TYPE location, int size): location(location), size(size) {}
+
+        LOCATION_TYPE get_location_type() const {
+            return location;
+        }
+
+        int get_size() const {
+            return size;
+        }
 
         // Return x86 assembly code to access the value
         virtual std::string get_access_string() const = 0;
