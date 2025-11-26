@@ -87,6 +87,8 @@ void AssemblyBuilder::visit(ASTBinaryOpNode& node) {
 
     assert(node.op != BINARY_OP::INVALID);
 
+    // Fetch operands
+
     ID::SlotId rhs_slot = operand_stack.top();
     std::string rhs_slot_identifier = allocator.get_access_string(rhs_slot);
     operand_stack.pop();
@@ -98,7 +100,9 @@ void AssemblyBuilder::visit(ASTBinaryOpNode& node) {
     if (node.op == BINARY_OP::ASSIGNMENT) {
             // Assignment is a special binary op case, because we need to get the identifier to assign to
 
-            
+            std::string assignment_instr = allocator.get_set_val_instr_slot(lhs_slot, rhs_slot);
+
+            generated_assembly_epilog += std::format("{}\n", assignment_instr);
     } else {
         // Result of binary ops on two ints is also an int of size 4
         ID::SlotId result_slot = allocator.add_temporary(8);
