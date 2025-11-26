@@ -130,17 +130,25 @@ void AssemblyBuilder::visit(ASTTempNode& node) {
 void AssemblyBuilder::visit(ASTIdentNode& node) {
     clear_generated_assembly();
 
-    ID::SymbolTableId ident_symbol = symbol_table.get_by_node_id(node.id).table_id;
+    AST_NODE_TYPE parent_node_type = ast.get_node(node.parent)->node_type;
+
+    // Functions do not use any memory (yet)
+    if (parent_node_type == AST_NODE_TYPE::FUNCTION_NODE) {
+        return;
+    }
+
+    ID::SymbolTableId ident_symbol = symbol_table.get_by_identifier(node.identifier).table_id;
     ID::SlotId temp_slot_id;
 
     if (allocator.symbol_has_slot(ident_symbol)) {
         temp_slot_id = allocator.get_symbol_slot(ident_symbol);
     } else {
-        temp_slot_id = allocator.add_variable_to_stack(node.id, 4);
+        temp_slot_id = allocator.add_variable_to_stack(ident_symbol, 4);
     }
 
     // Ints are always 4 bytes
     operand_stack.push(temp_slot_id);
+
 }
 
 void AssemblyBuilder::visit(ASTIntConstNode& node) {
@@ -162,13 +170,16 @@ void AssemblyBuilder::visit(ASTTempParentNode& node) {
 void AssemblyBuilder::visit(ASTVariableDeclNode& node) {
     clear_generated_assembly();
 
-    ID::SlotId variable_slot = allocator.add_variable_to_stack(symbol_table.get_by_node_id(node.id).table_id, 4);
-
     if (node.defines_here) {
         ID::SlotId value_to_set = operand_stack.top();
         operand_stack.pop();
 
-        std::string set_variable_instr = allocator.get_set_val_instr(variable_slot, value_to_set);
+        ID::SlotId variable_slot = operand_stack.top();
+        operand_stack.pop();
+
+        generated_assembly_prolog += std::format("push 0\n");
+
+        std::string set_variable_instr = allocator.get_set_val_instr_slot(variable_slot, value_to_set);
 
         generated_assembly_epilog += std::format("{}\n", set_variable_instr);
     }

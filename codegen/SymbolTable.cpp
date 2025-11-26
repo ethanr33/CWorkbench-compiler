@@ -6,6 +6,8 @@ ID::SymbolTableId SymbolTable::add_variable(ID::ASTNodeId node_id, const std::st
     ident_to_entry.insert({ident, table_id});
     node_id_to_entry.insert({node_id, table_id});
 
+    table_arena.get(table_id).table_id = table_id;
+
     return table_id;
 }
 
@@ -13,6 +15,8 @@ ID::SymbolTableId SymbolTable::add_function(ID::ASTNodeId node_id, const std::st
     ID::SymbolTableId table_id = table_arena.add(SymbolTableEntry(ident, node_id, ENTRY_TYPE::FUNCTION));
     ident_to_entry.insert({ident, table_id});
     node_id_to_entry.insert({node_id, table_id});
+
+    table_arena.get(table_id).table_id = table_id;
 
     return table_id;
 }

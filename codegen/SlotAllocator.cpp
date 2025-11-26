@@ -39,6 +39,10 @@ ID::SlotId SlotAllocator::add_temporary(int size) {
 ID::SlotId SlotAllocator::add_variable_to_stack(ID::SymbolTableId id, int size) {
     ID::SlotId slot_id = slots.add(std::make_unique<SymbolStackSlot>(id, size, next_available_stack_pos));
     next_available_stack_pos += size;
+
+    // Keep track of ident in symbol table
+    symbol_slots[id] = slot_id;
+
     return slot_id;
 }
 
