@@ -101,7 +101,7 @@ void AssemblyBuilder::visit(ASTBinaryOpNode& node) {
             
     } else {
         // Result of binary ops on two ints is also an int of size 4
-        ID::SlotId result_slot = allocator.add_temporary(4);
+        ID::SlotId result_slot = allocator.add_temporary(8);
         std::string result_slot_identifier = allocator.get_access_string(result_slot);
 
         std::string result_initialization_instr;
@@ -143,10 +143,9 @@ void AssemblyBuilder::visit(ASTIdentNode& node) {
     if (allocator.symbol_has_slot(ident_symbol)) {
         temp_slot_id = allocator.get_symbol_slot(ident_symbol);
     } else {
-        temp_slot_id = allocator.add_variable_to_stack(ident_symbol, 4);
+        temp_slot_id = allocator.add_variable_to_stack(ident_symbol, 8);
     }
 
-    // Ints are always 4 bytes
     operand_stack.push(temp_slot_id);
 
 }
@@ -154,8 +153,7 @@ void AssemblyBuilder::visit(ASTIdentNode& node) {
 void AssemblyBuilder::visit(ASTIntConstNode& node) {
     clear_generated_assembly();
 
-    // Ints are always 4 bytes
-    ID::SlotId temp_slot_id = allocator.add_temporary(4);
+    ID::SlotId temp_slot_id = allocator.add_temporary(8);
     std::string set_val_instr = allocator.get_set_val_instr(temp_slot_id, node.value);
 
     operand_stack.push(temp_slot_id);

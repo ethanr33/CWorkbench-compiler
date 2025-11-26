@@ -65,8 +65,8 @@ std::string SlotAllocator::get_set_val_instr_slot(ID::SlotId id, ID::SlotId new_
         const std::string new_val_access_str = slots.get(new_val)->get_access_string();
         const std::string dest_access_str = slots.get(id)->get_access_string();
 
-        std::string new_val_to_temp_instr = std::format("mov {}, {}\n", temp_register_name, new_val_access_str);
-        std::string temp_to_dest_instr = std::format("mov {}, {}", dest_access_str, temp_register_name);
+        std::string new_val_to_temp_instr = std::format("mov QWORD {}, {}\n", temp_register_name, new_val_access_str);
+        std::string temp_to_dest_instr = std::format("mov QWORD {}, {}", dest_access_str, temp_register_name);
 
         return new_val_to_temp_instr + temp_to_dest_instr;
     } else {
@@ -75,7 +75,7 @@ std::string SlotAllocator::get_set_val_instr_slot(ID::SlotId id, ID::SlotId new_
         std::string dest_string = slots.get(id)->get_access_string();
         std::string src_string = slots.get(new_val)->get_access_string();
 
-        return std::format("mov {}, {}", dest_string, src_string);
+        return std::format("mov QWORD {}, {}", dest_string, src_string);
     }
 }
 

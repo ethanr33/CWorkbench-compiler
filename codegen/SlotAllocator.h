@@ -33,7 +33,7 @@ class SlotAllocator {
 
         ID::SlotId add_temp_to_stack(int size);
     public:
-        SlotAllocator() : next_available_stack_pos(4) {}
+        SlotAllocator() : next_available_stack_pos(8) {}
 
         // Returns the index of a free slot to store a temporary value in
         // Prioritizes using free registers first, then stack memory
