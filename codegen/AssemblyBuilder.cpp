@@ -114,13 +114,16 @@ void AssemblyBuilder::visit(ASTBinaryOpNode& node) {
             result_initialization_instr = allocator.get_set_val_instr(result_slot, 0);
         } else if (node.op == BINARY_OP::MULTIPLICATION) {
             result_initialization_instr = allocator.get_set_val_instr(result_slot, 1);
-        }
+        } 
 
         std::string operator_instr = op_to_assembly_map.at(node.op);
+        std::string lhs_instruction = allocator.generate_instr_from_slots(operator_instr, result_slot, lhs_slot);
+        std::string rhs_instruction = allocator.generate_instr_from_slots(operator_instr, result_slot, rhs_slot);
+
 
         generated_assembly_epilog += std::format("{}\n", result_initialization_instr);
-        generated_assembly_epilog += std::format("{} {}, {}\n", operator_instr, result_slot_identifier, rhs_slot_identifier);
-        generated_assembly_epilog += std::format("{} {}, {}\n", operator_instr, result_slot_identifier, lhs_slot_identifier);
+        generated_assembly_epilog += std::format("{}\n", lhs_instruction);
+        generated_assembly_epilog += std::format("{}\n", rhs_instruction) + "\n";
 
         operand_stack.push(result_slot);
     }

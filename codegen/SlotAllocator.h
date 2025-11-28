@@ -41,7 +41,7 @@ class SlotAllocator {
 
         // Returns the index of a free slot to store a value in
         // Always adds to stack memory (used for variables)
-        ID::SlotId add_variable_to_stack(ID::SymbolTableId, int size);
+        ID::SlotId add_variable_to_stack(ID::SymbolTableId, int);
 
         // Returns assembly code to access the value
         // For registers this is the name of the register
@@ -51,10 +51,17 @@ class SlotAllocator {
         // Returns assembly code to set the value of this slot to a binary value
         // For registers this is mov "reg_name", val
         // For stack values this is mov [rbp-offset], val
-        std::string get_set_val_instr(ID::SlotId, uint64_t new_val) const;
+        std::string get_set_val_instr(ID::SlotId, uint64_t) const;
 
         // Returns assembly code to set the value of this slot to the value in another slot
-        std::string get_set_val_instr_slot(ID::SlotId, ID::SlotId new_val);
+        std::string get_set_val_instr_slot(ID::SlotId, ID::SlotId);
+
+        // Given a instruction string, source slot, and destination slot generate instruction(s)
+        // which perform the operation on the destination slot using the value from source slot
+        std::string generate_instr_from_slots(const std::string&, ID::SlotId, ID::SlotId);
+
+        // Given a source slot and an operand slot, return code which
+        std::string get_binary_op_instr(const std::string&, ID::SlotId, ID::SlotId);
 
         // Checks if a symbol already has memory allocated for it
         bool symbol_has_slot(ID::SymbolTableId) const;

@@ -94,7 +94,11 @@ class StackSlot : public Slot {
 
         virtual std::string get_set_val_instr(uint64_t val) const override {
             std::string access_str = get_access_string();
-            return std::format("mov {}, {}", access_str, val);
+
+            // Since all values being moved right now will be 8 bytes, the size specifier will be QWORD
+            // If this changes in the future, an implementation which supports other size specifiers
+            // will be needed
+            return std::format("mov QWORD {}, {}", access_str, val);
         }
 
         virtual std::string get_initialization_instr(uint64_t val) const override {
