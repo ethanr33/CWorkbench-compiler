@@ -11,7 +11,7 @@ ID::SlotId SlotAllocator::add_temporary(int size) {
     // Check if there are any free registers to use
     
     bool has_free_register = false;
-    REGISTER chosen_register;
+    REGISTER chosen_register = REGISTER::INVALID;
 
     for (const auto&[reg, reg_status] : register_statuses) {
         if (reg_status == REGISTER_STATUS::FREE) {

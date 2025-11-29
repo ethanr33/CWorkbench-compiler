@@ -63,9 +63,6 @@ class SlotAllocator {
         // which perform the operation on the destination slot using the value from source slot
         std::string generate_instr_from_slots(const std::string&, ID::SlotId, ID::SlotId);
 
-        // Given a source slot and an operand slot, return code which
-        std::string get_binary_op_instr(const std::string&, ID::SlotId, ID::SlotId);
-
         // Checks if a symbol already has memory allocated for it
         bool symbol_has_slot(ID::SymbolTableId) const;
 

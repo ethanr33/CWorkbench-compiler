@@ -9,7 +9,7 @@
 #include "SymbolTable.h"
 
 enum class LOCATION_TYPE { REGISTER, STACK };
-enum class REGISTER { RAX, R8, R9, R10, R11, R12, R13, R14, R15 };
+enum class REGISTER { INVALID, R8, R9, R10, R11, R12, R13, R14, R15 };
 
 // Class to represent a area in memory/registers where a value lives
 class Slot {
@@ -21,7 +21,6 @@ class Slot {
     protected:
         // Map register type enum to its keyword in x86-64 asm
         const std::unordered_map<REGISTER, std::string> register_keyword_map = {
-            {REGISTER::RAX, "rax"},
             {REGISTER::R8, "r8"},
             {REGISTER::R9, "r9"},
             {REGISTER::R10, "r10"},

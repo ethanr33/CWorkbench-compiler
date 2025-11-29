@@ -104,7 +104,7 @@ void AssemblyBuilder::visit(ASTBinaryOpNode& node) {
 
             generated_assembly_epilog += std::format("{}\n", assignment_instr);
     } else {
-        // Result of binary ops on two ints is also an int of size 4
+        // Result of binary ops on two ints is also an int of size 8
         ID::SlotId result_slot = allocator.add_temporary(8);
         std::string result_slot_identifier = allocator.get_access_string(result_slot);
 
