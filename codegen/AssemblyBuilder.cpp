@@ -114,19 +114,45 @@ void AssemblyBuilder::visit(ASTBinaryOpNode& node) {
             result_initialization_instr = allocator.get_set_val_instr(result_slot, 0);
         } else if (node.op == BINARY_OP::MULTIPLICATION) {
             result_initialization_instr = allocator.get_set_val_instr(result_slot, 1);
-        } 
+        } else if (node.op == BINARY_OP::SUBTRACTION) {
+            result_initialization_instr = allocator.get_set_val_instr_slot(result_slot, lhs_slot);
+        } else if (node.op == BINARY_OP::DIVISION) {
+            // idiv instruction addressing modes only operate on rax register
+            // So the instruction must initialize the LHS value in RAX
 
+            // RAX is not available as a temporary register
+            // No need to worry about it overwriting another value
+            generated_assembly_epilog += std::format("mov QWORD rax, {}\n", lhs_slot_identifier);
+            generated_assembly_epilog += std::format("idiv {}\n", rhs_slot_identifier);
+
+            // Once we're done put quotient in result slot to maintain our stack structure
+
+            generated_assembly_epilog += std::format("mov {}, rax\n", result_slot_identifier);
+        }
+ 
         std::string operator_instr = op_to_assembly_map.at(node.op);
-        std::string lhs_instruction = allocator.generate_instr_from_slots(operator_instr, result_slot, lhs_slot);
-        std::string rhs_instruction = allocator.generate_instr_from_slots(operator_instr, result_slot, rhs_slot);
+
+        if (node.op == BINARY_OP::ADDITION || node.op == BINARY_OP::MULTIPLICATION) {
+            std::string lhs_instruction = allocator.generate_instr_from_slots(operator_instr, result_slot, lhs_slot);
+            std::string rhs_instruction = allocator.generate_instr_from_slots(operator_instr, result_slot, rhs_slot);
 
 
-        generated_assembly_epilog += std::format("{}\n", result_initialization_instr);
-        generated_assembly_epilog += std::format("{}\n", lhs_instruction);
-        generated_assembly_epilog += std::format("{}\n", rhs_instruction) + "\n";
+            generated_assembly_epilog += std::format("{}\n", result_initialization_instr);
+            generated_assembly_epilog += std::format("{}\n", lhs_instruction);
+            generated_assembly_epilog += std::format("{}\n", rhs_instruction);
+        } else if (node.op == BINARY_OP::SUBTRACTION) {
+            generated_assembly_epilog += std::format("{}\n", result_initialization_instr);
+            
+            std::string subtraction_instr = allocator.generate_instr_from_slots(operator_instr, result_slot, rhs_slot);
+
+            generated_assembly_epilog += std::format("{}\n", subtraction_instr);
+        }
 
         operand_stack.push(result_slot);
     }
+
+    allocator.free_temporary(lhs_slot);
+    allocator.free_temporary(rhs_slot);
 
 }
 

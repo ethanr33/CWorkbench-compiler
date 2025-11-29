@@ -75,6 +75,10 @@ class RegisterSlot : public Slot {
             return get_set_val_instr(val);
         }
 
+        REGISTER get_register() const {
+            return reg;
+        }
+
 };
 
 // Avoid storing the offset directly in the class if necessary,

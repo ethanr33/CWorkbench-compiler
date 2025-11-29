@@ -24,6 +24,14 @@
         "error": false,
         "returncode": 17
     },
+    "divtwonumbers1.c": {
+        "error": false,
+        "returncode": 2
+    },
+    "divtwonumbers2.c": {
+        "error": false,
+        "returncode": 3
+    },
     "isolatedexpr.c" : {
         "error": false,
         "returncode": 10

@@ -39,6 +39,9 @@ class SlotAllocator {
         // Prioritizes using free registers first, then stack memory
         ID::SlotId add_temporary(int size);
 
+        // Frees a temporary slot for future use
+        void free_temporary(ID::SlotId slot);
+
         // Returns the index of a free slot to store a value in
         // Always adds to stack memory (used for variables)
         ID::SlotId add_variable_to_stack(ID::SymbolTableId, int);

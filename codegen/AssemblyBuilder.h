@@ -21,7 +21,8 @@ class AssemblyBuilder : public NodeVisitor {
         const std::unordered_map<BINARY_OP, string> op_to_assembly_map = {
             {BINARY_OP::ADDITION, "add"},
             {BINARY_OP::SUBTRACTION, "sub"},
-            {BINARY_OP::MULTIPLICATION, "imul"}
+            {BINARY_OP::MULTIPLICATION, "imul"},
+            {BINARY_OP::DIVISION, "idiv"}
         };
 
         bool has_valid_entry_point() const;

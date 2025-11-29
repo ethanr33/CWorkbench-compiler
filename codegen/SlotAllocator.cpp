@@ -34,6 +34,18 @@ ID::SlotId SlotAllocator::add_temporary(int size) {
     
     return assigned_slot;
 }
+
+void SlotAllocator::free_temporary(ID::SlotId slot_to_free) {
+    LOCATION_TYPE slot_type = slots.get(slot_to_free)->get_location_type();
+    if (slot_type == LOCATION_TYPE::REGISTER) {
+        // Mark register as no longer used
+        REGISTER used_reg = dynamic_cast<RegisterSlot*>(slots.get(slot_to_free).get())->get_register();
+
+        register_statuses.at(used_reg) = REGISTER_STATUS::FREE;
+    } else if (slot_type == LOCATION_TYPE::STACK) {
+        // Need to figure out how to deal with freeing stack memory
+    }
+}
 	
 
 ID::SlotId SlotAllocator::add_variable_to_stack(ID::SymbolTableId id, int size) {
