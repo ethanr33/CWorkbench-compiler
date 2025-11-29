@@ -2,31 +2,8 @@
 #include <variant>
 #include <stack>
 
+#include "SlotAllocator.h"
 #include "../parser/ASTVisitors.h"
-
-enum class Register { RAX, R12 };
-
-class MemoryAllocator : public NodeVisitor {
-    private:
-        AST& ast;
-        SymbolTable& symbol_table;
-
-        uint32_t max_stack_offset = 0;
-    public:
-
-        MemoryAllocator(AST& ast, SymbolTable& table) : ast(ast), symbol_table(table) {}
-
-        void visit(ASTRootNode&) override {};
-        void visit(ASTFunctionNode&) override {};
-        void visit(ASTReturnNode&) override {};
-        void visit(ASTTypeNode&) override {};
-        void visit(ASTBinaryOpNode&) override {};
-        void visit(ASTTempNode&) override {};
-        void visit(ASTIdentNode&) override {};
-        void visit(ASTIntConstNode&) override {};
-        void visit(ASTTempParentNode&) override {}
-        void visit(ASTVariableDeclNode&) override;
-};
 
 class AssemblyBuilder : public NodeVisitor {
     private:
@@ -37,30 +14,25 @@ class AssemblyBuilder : public NodeVisitor {
         AST& ast;
         SymbolTable& symbol_table;
 
-        MemoryAllocator allocator;
+        SlotAllocator allocator;
 
         // Maps from binary operation to x86 assembly instruction for certain binary operations (arithmetic ones for now)
         // The operations here are meant to be used in two-operand form
         const std::unordered_map<BINARY_OP, string> op_to_assembly_map = {
             {BINARY_OP::ADDITION, "add"},
-            {BINARY_OP::MULTIPLICATION, "imul"}
-        };
-
-        std::unordered_map<Register, string> register_keyword_map = {
-            {Register::RAX, "rax"},
-            {Register::R12, "r12"}
+            {BINARY_OP::SUBTRACTION, "sub"},
+            {BINARY_OP::MULTIPLICATION, "imul"},
+            {BINARY_OP::DIVISION, "idiv"}
         };
 
         bool has_valid_entry_point() const;
         void clear_generated_assembly();
 
-        void allocate_memory_helper(ID::ASTNodeId);
-
-        std::stack<std::variant<int, std::string, Register>> operand_stack;
+        std::stack<ID::SlotId> operand_stack;
         
     public:
 
-        AssemblyBuilder(AST& ast, SymbolTable& table) : ast(ast), symbol_table(table), allocator(ast, symbol_table) {}
+        AssemblyBuilder(AST& ast, SymbolTable& table) : ast(ast), symbol_table(table), allocator() {}
 
         const string& get_prolog() const;
         const string& get_body() const;
@@ -78,7 +50,6 @@ class AssemblyBuilder : public NodeVisitor {
         void visit(ASTVariableDeclNode&) override;
 
         void validate_AST() const;
-        void allocate_memory();
 
          ~AssemblyBuilder() = default;
 

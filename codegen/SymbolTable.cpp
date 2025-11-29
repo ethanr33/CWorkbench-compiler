@@ -1,17 +1,22 @@
 
 #include "SymbolTable.h"
 
-ID::SymbolTableId SymbolTable::add_function(ID::ASTNodeId node_id, const std::string& ident) {
-    ID::SymbolTableId table_id = table_arena.add(SymbolTableEntry(ident, node_id, ENTRY_TYPE::FUNCTION));
-    ident_to_entry.insert({ident, table_id});
-    node_id_to_entry.insert({node_id, table_id});
-    return table_id;
-}
-
 ID::SymbolTableId SymbolTable::add_variable(ID::ASTNodeId node_id, const std::string& ident) {
     ID::SymbolTableId table_id = table_arena.add(SymbolTableEntry(ident, node_id, ENTRY_TYPE::VARIABLE));
     ident_to_entry.insert({ident, table_id});
     node_id_to_entry.insert({node_id, table_id});
+
+    table_arena.get(table_id).table_id = table_id;
+
+    return table_id;
+}
+
+ID::SymbolTableId SymbolTable::add_function(ID::ASTNodeId node_id, const std::string& ident) {
+    ID::SymbolTableId table_id = table_arena.add(SymbolTableEntry(ident, node_id, ENTRY_TYPE::FUNCTION));
+    ident_to_entry.insert({ident, table_id});
+    node_id_to_entry.insert({node_id, table_id});
+
+    table_arena.get(table_id).table_id = table_id;
 
     return table_id;
 }
@@ -35,4 +40,12 @@ const SymbolTableEntry& SymbolTable::get_by_node_id(const ID::ASTNodeId id) cons
 
 bool SymbolTable::has_identifier(const std::string& ident) const {
     return ident_to_entry.find(ident) != ident_to_entry.end();
+}
+
+SymbolTableEntry& SymbolTable::get_by_table_id(ID::SymbolTableId id) {
+    return table_arena.get(id);
+}
+
+const SymbolTableEntry& SymbolTable::get_by_table_id(const ID::SymbolTableId id) const {
+    return table_arena.get(id);
 }

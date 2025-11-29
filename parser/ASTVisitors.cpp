@@ -156,7 +156,7 @@ void ASTBuilderVisitor::visit(ASTIdentNode& node) {
             if (ast.get_symbol_table().has_identifier(node.identifier)) {
                 throw std::runtime_error("Redeclaration of variable " + node.identifier);
             } else {
-                ast.get_symbol_table().add_variable(node.parent, node.identifier);
+                ID::SymbolTableId variable_id = ast.get_symbol_table().add_variable(node.parent, node.identifier);
             }
 
             break;

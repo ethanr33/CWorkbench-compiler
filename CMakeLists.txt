@@ -32,6 +32,7 @@ set(SOURCES
     parser/Parser.cpp
     codegen/AssemblyGenerator.cpp
     codegen/AssemblyBuilder.cpp
+    codegen/SlotAllocator.cpp
 )
 
 set(SOURCES_TEST

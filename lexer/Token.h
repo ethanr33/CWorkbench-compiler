@@ -30,7 +30,9 @@ enum class TOKEN_TYPE {
     SEMICOLON,
     EQUALS,
     PLUS,
+    HYPHEN,
     ASTERISK,
+    F_SLASH,
     EPSILON,
     END_OF_INPUT,
     NON_TOKEN

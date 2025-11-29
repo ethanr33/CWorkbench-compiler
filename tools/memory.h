@@ -8,6 +8,7 @@ namespace ID {
     using ASTNodeId = uint32_t;
     using SymbolTableId = uint32_t;
     using CFGSymbolId = uint32_t;
+    using SlotId = uint32_t;
 };
 
 template<typename T>
