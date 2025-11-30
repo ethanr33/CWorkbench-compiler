@@ -56,6 +56,26 @@
         "error": false,
         "returncode": 4
     },
+    "parenthesis1.c" : {
+        "error": false,
+        "returncode": 9
+    },
+    "parenthesis2.c" : {
+        "error": false,
+        "returncode": 10
+    },
+    "parenthesis3.c" : {
+        "error": false,
+        "returncode": 12
+    },
+    "doubleparenthesis1.c" : {
+        "error": false,
+        "returncode": 2
+    },
+    "doubleparenthesis2.c" : {
+        "error": false,
+        "returncode": 9
+    },
     "missingoperandright.c" : {
         "error": true
     },
@@ -66,6 +86,12 @@
         "error": true
     },
     "doubleplus.c" : {
+        "error": true
+    },
+    "missingparenthesis1.c" : {
+        "error": true
+    },
+    "missingparenthesis2.c" : {
         "error": true
     }
 }
