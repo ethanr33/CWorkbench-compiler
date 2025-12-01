@@ -2,11 +2,13 @@
 <function> ::= <type> "IDENT" "(" ")" "{" <functionbody> "}"
 <type> ::= "INT"
 <literal> ::= "INT_CONST"
+<value> ::= <literal> | "IDENT"
 <binaryoptype> ::= "+" | "-" | "*" | "/" | "="
 <functionbody> ::= <statement> <functionbody> | "ε"
 <statement> ::= <return> | <variabledeclaration> | <expression> ";"
 <return> ::= "RETURN" <expression> ";"
 <variabledeclaration> ::= <type> "IDENT" <variabledefinition> ";"
 <variabledefinition> ::= "=" <expression> | "ε"
-<expression> ::= <literal> <binaryop> | "IDENT" <binaryop>
+<expression> ::= <exprval> <binaryop>
+<exprval> ::= "(" <expression> ")" | <value>
 <binaryop> ::= <binaryoptype> <expression> | "ε"
