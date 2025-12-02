@@ -78,7 +78,7 @@ void AST::construct_AST_helper(ID::ASTNodeId node) {
 
 void AST::construct_AST_from_parse_tree() {
     construct_AST_helper(root);
-    construct_expression_trees();
+    // construct_expression_trees();
 }
 
 void AST::construct_leaf_node(Token& token, SymbolId symbol, stack<ID::ASTNodeId>& ast_stack) {

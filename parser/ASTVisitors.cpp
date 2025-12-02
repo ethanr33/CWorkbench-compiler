@@ -108,7 +108,14 @@ void ASTBuilderVisitor::visit(ASTReturnNode& node) {
 
     promote_children(node.children.at(1));
 
-    erase_children(node, AST_NODE_TYPE::TEMP_NODE);
+    erase_children(node, [this](ID::ASTNodeId node_id) {
+        if (ast.get_node(node_id)->node_type == AST_NODE_TYPE::TEMP_NODE) {
+            if (dynamic_cast<ASTTempNode*>(ast.get_node(node_id).get())->data == ";" || dynamic_cast<ASTTempNode*>(ast.get_node(node_id).get())->data == "RETURN") {
+                return true;
+            }
+        }
+        return false;
+    });
 }
 
 void ASTBuilderVisitor::visit(ASTTypeNode& node) {
@@ -119,27 +126,32 @@ void ASTBuilderVisitor::visit(ASTBinaryOpNode& node) {
 
     promote_children_by_type(AST_NODE_TYPE::TEMP_PARENT_NODE, node.id);
 
-    // Get operation for binary op node (if appliciable)
-    for (auto it = node.children.begin(); it != node.children.end();) {
-        ID::ASTNodeId child = *it;
-        if (ast.get_node(child)->node_type == AST_NODE_TYPE::TEMP_NODE) {
-            // If the binary op node contains a temp node child, the temp node defines the type of operation
-            node.set_binary_op(dynamic_cast<ASTTempNode*>(ast.get_node(child).get())->data);
-            it++;
-        } else {
-            it++;
-        }
+    // The rule for binary op is <binaryop> ::= <binaryoptype> <expression> | "ε"
+    // And since <binaryoptype> ::= "+", "-", ... and so on when <binaryoptype> is promoted it is replaced with a temp representing the operation
+
+    if (node.children.size() != 0) {
+        ID::ASTNodeId binary_op_node_id = ast.get_node(node.children.at(0))->id;
+        node.set_binary_op(dynamic_cast<ASTTempNode*>(ast.get_node(node.children.at(0)).get())->data);
+
+        // Once we set the op it's safe to remove the node
+        erase_children(node, [this, binary_op_node_id](ID::ASTNodeId node_id) {
+            if (node_id == binary_op_node_id) {
+                return true;
+            } 
+            return false;
+        });
     }
 
-    erase_children(node, AST_NODE_TYPE::TEMP_NODE);
 
-    erase_children(node, [this](ID::ASTNodeId node_id) {
-        if (ast.get_node(node_id)->node_type == AST_NODE_TYPE::BINARY_OP_NODE) {
-            return ast.get_node(node_id)->children.size() == 0;
-        } else {
-            return false;
-        }
-    });
+    // erase_children(node, AST_NODE_TYPE::TEMP_NODE);
+
+    // erase_children(node, [this](ID::ASTNodeId node_id) {
+    //     if (ast.get_node(node_id)->node_type == AST_NODE_TYPE::BINARY_OP_NODE) {
+    //         return ast.get_node(node_id)->children.size() == 0;
+    //     } else {
+    //         return false;
+    //     }
+    // });
 
 }
 
@@ -190,28 +202,54 @@ void ASTBuilderVisitor::visit(ASTTempParentNode& node) {
         // This is not valid, so we need to put the literal inside of a binary op
 
         if (node.children.size() == 2) {
-            // The rule for expression is either <literal> <binop> or IDENT <binop>, either way <binop> will be the second child of <expression>
-            ID::ASTNodeId const_node = node.children.at(0);
-            ID::ASTNodeId binop_node = node.children.at(1);
+            // // The rule for expression is <exprval> <binop>, either way <binop> will be the second child of <expression>
+            // ID::ASTNodeId const_node = node.children.at(0);
+            // ID::ASTNodeId binop_node = node.children.at(1);
 
-            assert(ast.get_node(const_node)->node_type == AST_NODE_TYPE::INT_CONST_NODE || ast.get_node(const_node)->node_type == AST_NODE_TYPE::IDENT_NODE);
-            assert(ast.get_node(binop_node)->node_type == AST_NODE_TYPE::BINARY_OP_NODE);
+            // assert(ast.get_node(const_node)->node_type == AST_NODE_TYPE::INT_CONST_NODE || ast.get_node(const_node)->node_type == AST_NODE_TYPE::IDENT_NODE);
+            // assert(ast.get_node(binop_node)->node_type == AST_NODE_TYPE::BINARY_OP_NODE);
 
-            while (ast.get_node(binop_node)->children.size() > 1) {
-                // Remember based on our rule above, binop will always be the second child
-                binop_node = ast.get_node(binop_node)->children.at(1);
-            }
+            // while (ast.get_node(binop_node)->children.size() > 1) {
+            //     // Remember based on our rule above, binop will always be the second child
+            //     binop_node = ast.get_node(binop_node)->children.at(1);
+            // }
 
-            erase_children(node, [const_node](ID::ASTNodeId node_id) {
-                return node_id == const_node;
-            });
+            // erase_children(node, [const_node](ID::ASTNodeId node_id) {
+            //     return node_id == const_node;
+            // });
 
-            ast.get_node(binop_node)->children.insert(ast.get_node(binop_node)->children.begin(), const_node);
-            ast.get_node(const_node)->parent = binop_node;
+            // ast.get_node(binop_node)->children.insert(ast.get_node(binop_node)->children.begin(), const_node);
+            // ast.get_node(const_node)->parent = binop_node;
         }
 
     } else if (node.symbol == "<functionbody>") {
         promote_children_by_type(AST_NODE_TYPE::TEMP_PARENT_NODE, node.id);
+    } else if (node.symbol == "<value>") {
+        // Rule for value is <value> ::= <literal> | "IDENT", and <literal> ::= "INT_CONST"
+        // <literal> is a not of type TEMP_PARENT, so if there's a TEMP_PARENT child, it's ok to promote it
+
+        // Check there's the expected number of children
+        assert(node.children.size() == 1);
+
+        // Check the children match the expected type
+        assert(ast.get_node(node.children.at(0))->node_type == AST_NODE_TYPE::TEMP_PARENT_NODE || ast.get_node(node.children.at(0))->node_type == AST_NODE_TYPE::IDENT_NODE);
+
+        promote_children_by_type(AST_NODE_TYPE::TEMP_PARENT_NODE, node.id);
+    } else if (node.symbol == "<exprval>") {
+        // Rule is <exprval> ::= "(" <expression> ")" | <value>
+        // If there's one child, then <exprval> was parsed into a <value>, so <value> children should have been cleaned already and only be a single const/ident
+        // so in this case remove the <value> node and promote child
+
+        if (node.children.size() == 1) {
+            promote_children_by_type(AST_NODE_TYPE::TEMP_PARENT_NODE, node.id);
+        }
+
+        // If there's three children, then this expression contains parenthesis. Make sure to keep them even though they're temp nodes
+        // so that the correct infix expression can be found during the pass to construct expression trees
+
+        if (node.children.size() == 3) {
+            promote_children_by_type(AST_NODE_TYPE::TEMP_PARENT_NODE, node.id);
+        }
     }
 }
 

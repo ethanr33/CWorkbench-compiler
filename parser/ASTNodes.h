@@ -87,7 +87,7 @@ struct ASTNode {
 
 struct ASTBinaryOpNode : ASTNode {
     BINARY_OP op;
-
+\
     ASTBinaryOpNode() : ASTNode(AST_NODE_TYPE::BINARY_OP_NODE), op(BINARY_OP::INVALID) {}
 
     void visit(NodeVisitor& visitor) override;
